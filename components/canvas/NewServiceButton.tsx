@@ -39,7 +39,7 @@ export function NewServiceButton() {
   const user = useAuthStore((state) => state.user);
   const canvasTransform = useCanvasStore((state) => state.canvasTransform);
   const addNode = useCanvasStore((state) => state.addNode);
-  const setSelectedNodeId = useCanvasStore((state) => state.setSelectedNodeId);
+  const openNodePanel = useCanvasStore((state) => state.openNodePanel);
 
   const buttonLabel = useMemo(() => (isSubmitting ? 'Provisioning…' : 'New Service'), [isSubmitting]);
 
@@ -131,6 +131,7 @@ export function NewServiceButton() {
       const center = worldPointFromScreen(screenX, screenY, canvasTransform.viewportX, canvasTransform.viewportY, canvasTransform.scale);
       const internalPort = parseDeploymentPort(response.data?.app?.portMap ?? '8080:8080');
       const deploymentId = response.data?.deploymentId ?? crypto.randomUUID();
+      const jobId = response.data?.jobId ?? null;
 
       addNode({
         id: deploymentId,
@@ -141,8 +142,9 @@ export function NewServiceButton() {
         positionY: center.y,
         internalPort,
         repo,
+        jobId,
       });
-      setSelectedNodeId(deploymentId);
+      openNodePanel(deploymentId, 'logs');
       setIsOpen(false);
       setServiceName('');
       setRepositoryUrl('');
@@ -161,7 +163,7 @@ export function NewServiceButton() {
         ref={triggerRef}
         type="button"
         onClick={openModal}
-        className="fixed bottom-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all hover:bg-sky-400 active:scale-[0.98]"
+        className="fixed bottom-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-accent/30 bg-accent px-6 py-3 text-sm font-semibold text-white shadow-glow-accent transition-all hover:bg-accent-hover active:scale-[0.98]"
       >
         <Plus className="h-4 w-4 stroke-[3]" />
         {buttonLabel}
@@ -175,7 +177,7 @@ export function NewServiceButton() {
         >
           <div 
             ref={modalRef}
-            className="w-full max-w-lg rounded-[2rem] border border-zinc-800 bg-zinc-950/95 p-8 text-zinc-100 shadow-[0_32px_120px_rgba(0,0,0,0.65)] animate-in fade-in zoom-in-95 duration-200"
+            className="w-full max-w-lg rounded-[1.75rem] border border-brand-700/50 bg-brand-900/95 p-8 text-zinc-100 shadow-panel animate-in fade-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-service-title"
@@ -184,7 +186,7 @@ export function NewServiceButton() {
             {/* Header Block Container */}
             <div className="mb-6 flex items-start justify-between gap-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-sky-400">Dynamic Provisioning</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand-300">Dynamic Provisioning</p>
                 <h2 id="new-service-title" className="mt-1.5 text-xl font-semibold tracking-tight text-zinc-100">Create a new service</h2>
                 <p id="new-service-desc" className="mt-1 text-sm text-zinc-400">Submit metadata parameters to coordinate canvas node deployment profiles.</p>
               </div>
@@ -194,7 +196,7 @@ export function NewServiceButton() {
                 type="button"
                 onClick={closeModal}
                 disabled={isSubmitting}
-                className="rounded-full border border-zinc-800 bg-zinc-900/50 p-2 text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-100 disabled:opacity-40"
+                className="rounded-full border border-brand-700 bg-brand-800/50 p-2 text-zinc-400 transition-colors hover:border-brand-600 hover:text-zinc-100 disabled:opacity-40"
                 aria-label="Close configuration modal"
               >
                 <X className="h-4 w-4" />
@@ -221,7 +223,7 @@ export function NewServiceButton() {
                   value={serviceName}
                   onChange={(event) => setServiceName(event.target.value.toLowerCase().replace(/\s+/g, '-'))}
                   placeholder="payments-api"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition-all focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  className="gf-input font-normal normal-case tracking-normal"
                   required
                 />
               </div>
@@ -238,7 +240,7 @@ export function NewServiceButton() {
                   // FIXED: Changed event.target.trim() to event.target.value.trim()
                   onChange={(event) => setRepositoryUrl(event.target.value.trim())}
                   placeholder="https://github.com/org/repo"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 transition-all focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  className="gf-input font-normal normal-case tracking-normal"
                   required
                 />
               </div>
@@ -249,14 +251,14 @@ export function NewServiceButton() {
                   type="button"
                   onClick={closeModal}
                   disabled={isSubmitting}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-5 py-2.5 text-sm font-semibold text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200 disabled:opacity-50"
+                  className="rounded-gf border border-brand-700 bg-brand-800/50 px-5 py-2.5 text-sm font-semibold text-zinc-400 transition-colors hover:border-brand-600 hover:text-zinc-200 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 shadow-lg shadow-sky-500/10 transition-all hover:bg-sky-400 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                  className="gf-btn-primary w-auto px-5 py-2.5 disabled:opacity-40"
                 >
                   {isSubmitting ? 'Provisioning…' : `Deploy as ${user?.displayName || 'User'}`}
                 </button>

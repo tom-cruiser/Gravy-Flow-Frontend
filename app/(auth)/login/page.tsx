@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react'; // Added AlertCircle for better error semantics
+import { AuthShell } from '@/components/auth/AuthShell';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,17 +32,18 @@ export default function LoginPage() {
       const data = resp.data;
       setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
       router.push('/dashboard');
-    } catch (err: any) {
-      const backendError = err?.response?.data?.error;
-      const statusCode = err?.response?.status;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string };
+      const backendError = axiosErr?.response?.data?.error;
+      const statusCode = axiosErr?.response?.status;
 
       let message = 'Login failed. Please try again.';
       if (statusCode === 401 || backendError === 'invalid_credentials') {
         message = 'Invalid email or password.';
       } else if (backendError) {
         message = String(backendError).replace(/_/g, ' ');
-      } else if (err?.message) {
-        message = String(err.message);
+      } else if (axiosErr?.message) {
+        message = String(axiosErr.message);
       }
 
       setError(message);
@@ -51,104 +53,99 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-12 text-zinc-100 flex items-center justify-center">
-      {/* Optimized Layout: Balanced max-width and split ratios */}
-      <div className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-zinc-800 bg-zinc-900/40 shadow-2xl backdrop-blur-md grid md:grid-cols-12">
-        
-        {/* Left Informational Side: Takes 7 cols on desktop, hidden on small screens */}
-        <section className="hidden md:flex md:col-span-7 flex-col justify-between border-r border-zinc-800 p-12">
-          <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-400">GravyFlow Auth</p>
-            <h1 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight bg-gradient-to-br from-zinc-50 to-zinc-400 bg-clip-text text-transparent">
-              Sign in to the deployment canvas.
-            </h1>
-            <p className="max-w-md text-sm lg:text-base text-zinc-400 leading-relaxed">
-              Use your account to manage high-performance projects, custom domains, and programmatic edge deployments.
-            </p>
-          </div>
-          
-          <div className="mt-12 grid gap-3 text-xs text-zinc-400 grid-cols-3">
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-3.5 font-medium tracking-wide">JWT Sessions</div>
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-3.5 font-medium tracking-wide">Refresh Tokens</div>
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-3.5 font-medium tracking-wide">User Scopes</div>
-          </div>
-        </section>
-
-        {/* Right Form Side: Takes 5 cols on desktop, full width on mobile */}
-        <section className="col-span-12 md:col-span-5 flex items-center justify-center p-8 lg:p-12 bg-zinc-950/30">
-          <div className="w-full max-w-sm space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight text-zinc-100">Sign in</h3>
-              <p className="text-xs text-zinc-400 mt-1">Welcome back! Enter your credentials below.</p>
-            </div>
-
-            {/* Structured Error Block to avoid unstyled raw text shifts */}
-            {error && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300 animate-in fade-in zoom-in-95 duration-200">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
-                <span className="leading-relaxed">{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={submit} className="space-y-4">
-              {/* Email Input */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-xs font-medium text-zinc-400">Email address</label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                  placeholder="name@company.com"
-                  required
-                />
-              </div>
-              
-              {/* Password Input */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-xs font-medium text-zinc-400">Password</label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900/50 pl-3.5 pr-10 py-2.5 text-sm text-zinc-100 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Action Rows: High Contrast Primary Button */}
-              <div className="flex flex-col gap-4 pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full inline-flex items-center justify-center rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-all hover:bg-sky-400 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-sky-500/10"
-                >
-                  {loading ? 'Signing in…' : 'Sign in'}
-                </button>
-                
-                <p className="text-center text-xs text-zinc-500">
-                  Don't have an account?{' '}
-                  <Link href="/register" className="font-medium text-zinc-300 hover:text-sky-400 transition-colors underline underline-offset-4">
-                    Create one here
-                  </Link>
-                </p>
-              </div>
-            </form>
-          </div>
-        </section>
+    <AuthShell>
+      <div className="mb-8 md:hidden">
+        <Link href="/" className="text-xl font-bold tracking-tight text-white">
+          Gravy<span className="text-brand-300">Flow</span>
+        </Link>
       </div>
-    </main>
+
+      <div className="mb-8 space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Welcome back</h1>
+        <p className="text-sm text-zinc-400">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="gf-link">
+            Create one
+          </Link>
+        </p>
+      </div>
+
+      {error ? (
+        <div className="mb-5 flex items-start gap-2.5 rounded-gf border border-rose-500/25 bg-rose-500/10 p-3 text-xs text-rose-300">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      ) : null}
+
+      <form onSubmit={submit} className="space-y-4">
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="gf-input"
+          placeholder="Email"
+          required
+        />
+
+        <div className="relative">
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="gf-input pr-11"
+            placeholder="Password"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-500 transition-colors hover:text-zinc-300"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+
+        <button type="submit" disabled={loading} className="gf-btn-primary mt-2">
+          {loading ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+
+      <div className="gf-divider my-6 px-2">
+        <span className="relative z-10 bg-brand-900 px-3">Or continue with</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button type="button" disabled className="gf-btn-outline opacity-50" title="Coming soon">
+          <GoogleIcon />
+          Google
+        </button>
+        <button type="button" disabled className="gf-btn-outline opacity-50" title="Coming soon">
+          <AppleIcon />
+          Apple
+        </button>
+      </div>
+    </AuthShell>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+    </svg>
   );
 }

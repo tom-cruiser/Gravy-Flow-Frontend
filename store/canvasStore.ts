@@ -4,6 +4,7 @@ import { toast } from '@/store/toastStore';
 
 export type NodeType = 'web' | 'db';
 export type NodeStatus = 'RUNNING' | 'BUILDING' | 'FAILED';
+export type DrawerTab = 'logs' | 'env' | 'networking';
 
 export type CanvasNode = {
   id: string;
@@ -14,6 +15,8 @@ export type CanvasNode = {
   positionY: number;
   internalPort: number;
   repo: string;
+  jobId?: string | null;
+  statusMessage?: string;
 };
 
 // Types matching Go backend shapes (cmd/api/db.go)
@@ -51,14 +54,19 @@ type CanvasTransform = {
 type CanvasStore = {
   nodes: CanvasNode[];
   selectedNodeId: string | null;
+  drawerTab: DrawerTab;
   canvasTransform: CanvasTransform;
   loading: boolean;
   error: string | null;
   setNodes: (nodes: CanvasNode[]) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
+  setDrawerTab: (tab: DrawerTab) => void;
+  openNodePanel: (nodeId: string, tab?: DrawerTab) => void;
+  closeNodePanel: () => void;
   setCanvasTransform: (transform: CanvasTransform) => void;
   addNode: (node: CanvasNode) => void;
   updateNodePosition: (id: string, x: number, y: number) => void;
+  markNodeDeployQueued: (id: string, jobId: string | null) => void;
   loadNodes: () => Promise<void>;
   fetchCanvasData: () => Promise<void>;
   startPollingNodes: (intervalMs?: number) => void;
@@ -74,6 +82,13 @@ function parsePortMap(portMap: string | undefined | null): number {
   return 8080;
 }
 
+function normalizeNodeStatus(raw: string | undefined | null): NodeStatus {
+  const upper = String(raw || 'RUNNING').toUpperCase();
+  if (upper === 'BUILDING') return 'BUILDING';
+  if (upper === 'FAILED') return 'FAILED';
+  return 'RUNNING';
+}
+
 function mapDeploymentToCanvasNode(item: DeploymentRecordDTO, idx: number): CanvasNode {
   const defaultX = 220 + (idx % 3) * 360;
   const defaultY = 180 + Math.floor(idx / 3) * 240;
@@ -82,11 +97,12 @@ function mapDeploymentToCanvasNode(item: DeploymentRecordDTO, idx: number): Canv
     id: String(item.DeploymentID),
     name: item.AppName || 'unnamed',
     type: String(item.AppName || '').toLowerCase().includes('postgres') ? 'db' : 'web',
-    status: (String(item.Status || 'RUNNING').toUpperCase() as NodeStatus) || 'RUNNING',
+    status: normalizeNodeStatus(item.Status),
     positionX: defaultX,
     positionY: defaultY,
     internalPort: parsePortMap(item.PortMap),
     repo: item.SourceRepoURL || '',
+    statusMessage: item.StatusMessage || '',
   };
 }
 
@@ -97,7 +113,7 @@ function mapAppToCanvasNode(item: AppRecordDTO, idx: number): CanvasNode {
     id: String(item.id ?? `app-${idx}`),
     name: item.name ?? 'unnamed',
     type: String(item.name || '').toLowerCase().includes('postgres') ? 'db' : 'web',
-    status: (String(item.status || 'RUNNING').toUpperCase() as NodeStatus) || 'RUNNING',
+    status: normalizeNodeStatus(item.status),
     positionX: Number(item.layout?.x ?? defaultX),
     positionY: Number(item.layout?.y ?? defaultY),
     internalPort: parsePortMap(item.portMap ?? undefined),
@@ -110,6 +126,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   loading: false,
   error: null,
   selectedNodeId: null,
+  drawerTab: 'logs',
   canvasTransform: {
     viewportX: 80,
     viewportY: 100,
@@ -117,6 +134,9 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   },
   setNodes: (nodes) => set({ nodes }),
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
+  setDrawerTab: (drawerTab) => set({ drawerTab }),
+  openNodePanel: (nodeId, tab = 'logs') => set({ selectedNodeId: nodeId, drawerTab: tab }),
+  closeNodePanel: () => set({ selectedNodeId: null }),
   setCanvasTransform: (canvasTransform) => set({ canvasTransform }),
   addNode: (node) =>
     set((state) => ({
@@ -125,6 +145,19 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   updateNodePosition: (id, x, y) =>
     set((state) => ({
       nodes: state.nodes.map((node) => (node.id === id ? { ...node, positionX: x, positionY: y } : node)),
+    })),
+  markNodeDeployQueued: (id, jobId) =>
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              status: 'BUILDING',
+              jobId,
+              statusMessage: 'deployment queued',
+            }
+          : node,
+      ),
     })),
   loadNodes: async () => {
     const resApps = await api.get('/apps');
@@ -145,13 +178,21 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     // already track a node we keep its current x/y so polling refreshes
     // status/metadata without snapping dragged nodes back to the grid.
     set((state) => {
-      const existingPositions = new Map(
-        state.nodes.map((node) => [node.id, { x: node.positionX, y: node.positionY }]),
-      );
+      const existingById = new Map(state.nodes.map((node) => [node.id, node]));
 
       const nodes = incoming.map((node) => {
-        const existing = existingPositions.get(node.id);
-        return existing ? { ...node, positionX: existing.x, positionY: existing.y } : node;
+        const existing = existingById.get(node.id);
+        if (!existing) return node;
+
+        return {
+          ...node,
+          positionX: existing.positionX,
+          positionY: existing.positionY,
+          jobId:
+            node.status === 'BUILDING' || node.status === 'FAILED'
+              ? existing.jobId ?? node.jobId
+              : existing.jobId ?? null,
+        };
       });
 
       return { nodes };

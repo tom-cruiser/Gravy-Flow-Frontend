@@ -20,11 +20,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }, [accessToken, hasHydrated, router]);
 
   if (!hasHydrated) {
-    return <div className="min-h-screen bg-zinc-950" />;
+    return <div className="min-h-screen bg-brand-950" />;
   }
 
   if (!accessToken) {
-    return <div className="min-h-screen bg-zinc-950" />;
+    return <div className="min-h-screen bg-brand-950" />;
   }
 
   return <>{children}</>;

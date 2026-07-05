@@ -23,32 +23,24 @@ const ALLOCATED_MEMORY = '512 MB';
 type ServiceNodeProps = {
   node: CanvasNode;
   selected: boolean;
-  onSelect: (id: string | null) => void;
   onPointerDown: (event: PointerEvent<HTMLButtonElement>, id: string) => void;
 };
 
-export function ServiceNode({ node, selected, onSelect, onPointerDown }: ServiceNodeProps) {
+export function ServiceNode({ node, selected, onPointerDown }: ServiceNodeProps) {
   const Icon = node.type === 'db' ? Database : Globe2;
 
   const isRunning = node.status === 'RUNNING';
   const isBuilding = node.status === 'BUILDING';
   const isFailed = node.status === 'FAILED';
 
-  const handleClick = () => {
-    // Toggle: clicking a selected node closes the drawer
-    onSelect(selected ? null : node.id);
-  };
-
   return (
     <button
       type="button"
-      onClick={handleClick}
       onPointerDown={(event) => onPointerDown(event, node.id)}
-      /* Removed hover:scale to eliminate container boundary stuttering */
-      className={`group absolute w-[260px] rounded-2xl border bg-zinc-900/90 p-4 text-left backdrop-blur-md transition-shadow duration-150 ease-out will-change-transform ${
-        selected 
-          ? 'border-sky-500 ring-1 ring-sky-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(14,165,233,0.15)] z-10' 
-          : 'border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)]'
+      className={`pointer-events-auto group absolute w-[260px] rounded-gf-2xl border bg-brand-850/90 p-4 text-left backdrop-blur-md transition-shadow duration-150 ease-out will-change-transform ${
+        selected
+          ? 'border-accent ring-1 ring-accent/40 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(147,51,234,0.18)] z-10'
+          : 'border-brand-700/60 hover:border-brand-500/60 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)]'
       }`}
       style={{
         /* GPU-Accelerated matrix layout translation:
@@ -62,8 +54,8 @@ export function ServiceNode({ node, selected, onSelect, onPointerDown }: Service
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <div
-            className={`rounded-xl border p-2.5 shrink-0 transition-colors ${
-              selected ? 'border-sky-500/30 bg-sky-500/10 text-sky-400' : 'border-zinc-800 bg-zinc-950 text-zinc-400'
+            className={`rounded-gf border p-2.5 shrink-0 transition-colors ${
+              selected ? 'border-accent/30 bg-accent/10 text-brand-300' : 'border-brand-700 bg-brand-900 text-zinc-400'
             } ${isFailed ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : ''}`}
           >
             <Icon className="h-4 w-4" />
@@ -92,17 +84,17 @@ export function ServiceNode({ node, selected, onSelect, onPointerDown }: Service
 
       {/* Infrastructure Specs Grid block */}
       <div className="mt-4 space-y-2.5 text-xs">
-        <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-2.5">
+        <div className="rounded-gf border border-brand-700/60 bg-brand-900/40 p-2.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">Repository target</p>
           <p className="mt-1 truncate font-mono text-xs text-zinc-300" title={node.repo}>{node.repo}</p>
         </div>
         
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-2.5">
+          <div className="rounded-gf border border-brand-700/60 bg-brand-900/40 p-2.5">
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">CPU allocation</p>
             <p className="mt-1 font-semibold text-zinc-200 tracking-tight">{ALLOCATED_VCPU} <span className="text-[10px] font-normal text-zinc-500">vCPU</span></p>
           </div>
-          <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-2.5">
+          <div className="rounded-gf border border-brand-700/60 bg-brand-900/40 p-2.5">
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">Memory limit</p>
             <p className="mt-1 font-semibold text-zinc-200 tracking-tight">{ALLOCATED_MEMORY}</p>
           </div>

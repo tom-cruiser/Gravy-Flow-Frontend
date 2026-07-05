@@ -170,7 +170,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 shadow-glow">
+    <div className="rounded-2xl border border-brand-700 bg-brand-900/90 p-4 shadow-glow">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium text-zinc-100">Custom Domains</h2>
@@ -180,7 +180,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
           type="button"
           onClick={handleRefreshDomains}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-full border border-brand-600 bg-brand-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-brand-500 hover:bg-brand-750 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -188,7 +188,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
       </div>
 
       {loading && domains.length === 0 ? (
-        <div className="mb-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-500">
+        <div className="mb-3 rounded-2xl border border-brand-700 bg-brand-900/80 p-4 text-sm text-zinc-500">
           Loading domains…
         </div>
       ) : null}
@@ -209,13 +209,13 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
           onChange={(e) => setCustomDomain(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
           placeholder="app.example.com"
-          className="min-w-0 flex-1 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-4 py-3 font-mono text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/60"
+          className="min-w-0 flex-1 rounded-gf-2xl border border-brand-700/50 bg-brand-900/80 px-4 py-3 font-mono text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent/60"
         />
         <button
           type="button"
           onClick={handleAddDomain}
           disabled={addingDomain || !deploymentId}
-          className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-gf-2xl border border-brand-600 bg-brand-100 px-4 py-3 text-sm font-medium text-brand-950 transition hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="h-4 w-4" />
           {addingDomain ? 'Adding…' : 'Add'}
@@ -223,7 +223,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
       </div>
 
       {domains.length === 0 && !loading ? (
-        <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-950/50 p-6 text-center">
+        <div className="rounded-2xl border border-dashed border-brand-600 bg-brand-900/50 p-6 text-center">
           <p className="text-sm text-zinc-400">No domains configured yet</p>
           <p className="text-xs text-zinc-500 mt-1">Add a custom domain to connect to your service</p>
         </div>
@@ -235,7 +235,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
             const isDeleting = deletingDomain === domain.customDomain;
 
             return (
-              <div key={domain.id} className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+              <div key={domain.id} className="rounded-2xl border border-brand-700 bg-brand-900/70 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-mono text-sm font-medium text-zinc-100">{domain.customDomain}</p>
@@ -259,7 +259,7 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
                       type="button"
                       onClick={() => handleDeleteDomain(domain.customDomain)}
                       disabled={isDeleting}
-                      className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-zinc-400 transition hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-full border border-brand-700 bg-brand-800 px-3 py-1.5 text-zinc-400 transition hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label="Delete domain"
                     >
                       <Trash2 className={`h-3.5 w-3.5 ${isDeleting ? 'animate-pulse' : ''}`} />

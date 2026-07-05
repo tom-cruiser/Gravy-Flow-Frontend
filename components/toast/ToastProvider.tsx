@@ -12,7 +12,7 @@ const variantConfig: Record<
   success: { Icon: CheckCircle2, iconClass: 'text-emerald-400', border: 'border-emerald-500/30', glow: 'shadow-[0_0_30px_rgba(16,185,129,0.08)]' },
   error: { Icon: AlertCircle, iconClass: 'text-rose-400', border: 'border-rose-500/30', glow: 'shadow-[0_0_30px_rgba(244,63,94,0.1)]' },
   warning: { Icon: AlertTriangle, iconClass: 'text-amber-400', border: 'border-amber-500/30', glow: 'shadow-[0_0_30px_rgba(245,158,11,0.08)]' },
-  info: { Icon: Info, iconClass: 'text-sky-400', border: 'border-sky-500/30', glow: 'shadow-[0_0_30px_rgba(14,165,233,0.08)]' },
+  info: { Icon: Info, iconClass: 'text-brand-300', border: 'border-accent/30', glow: 'shadow-[0_0_30px_rgba(147,51,234,0.08)]' },
 };
 
 const EXIT_ANIMATION_MS = 200;
@@ -38,7 +38,7 @@ function ToastCard({ toast }: { toast: Toast }) {
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-auto flex w-full items-start gap-3 rounded-2xl border ${border} ${glow} bg-zinc-950/90 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur ${
+      className={`pointer-events-auto flex w-full items-start gap-3 rounded-gf-2xl border ${border} ${glow} bg-brand-900/90 p-4 shadow-panel backdrop-blur ${
         leaving
           ? 'animate-out fade-out slide-out-to-right-4 duration-200'
           : 'animate-in fade-in slide-in-from-bottom-4 duration-200'

@@ -25,7 +25,9 @@ function clamp(value: number, min: number, max: number) {
 export function GridCanvas() {
   const nodes = useCanvasStore((state) => state.nodes);
   const selectedNodeId = useCanvasStore((state) => state.selectedNodeId);
-  const setSelectedNodeId = useCanvasStore((state) => state.setSelectedNodeId);
+  const drawerTab = useCanvasStore((state) => state.drawerTab);
+  const openNodePanel = useCanvasStore((state) => state.openNodePanel);
+  const closeNodePanel = useCanvasStore((state) => state.closeNodePanel);
   const setCanvasTransform = useCanvasStore((state) => state.setCanvasTransform);
   const updateNodePosition = useCanvasStore((state) => state.updateNodePosition);
   const fetchCanvasData = useCanvasStore((state) => state.fetchCanvasData);
@@ -39,9 +41,19 @@ export function GridCanvas() {
   const [scale, setScale] = useState(1);
   const [dragState, setDragState] = useState<
     | { mode: 'pan'; pointerId: number; originX: number; originY: number; startX: number; startY: number }
-    | { mode: 'node'; pointerId: number; id: string; offsetX: number; offsetY: number }
+    | {
+        mode: 'node';
+        pointerId: number;
+        id: string;
+        offsetX: number;
+        offsetY: number;
+        originX: number;
+        originY: number;
+      }
     | null
   >(null);
+
+  const CLICK_DRAG_THRESHOLD_PX = 6;
 
   // SVG Connection Path Generation Matrix (Now computed on stable world space, ignoring layout reflows)
   const connectionPaths = useMemo(() => {
@@ -115,6 +127,19 @@ export function GridCanvas() {
 
     const handleUp = (event: globalThis.PointerEvent) => {
       if (dragState && dragState.pointerId === event.pointerId) {
+        if (dragState.mode === 'node') {
+          const moved = Math.hypot(event.clientX - dragState.originX, event.clientY - dragState.originY);
+          if (moved <= CLICK_DRAG_THRESHOLD_PX) {
+            const node = nodes.find((entry) => entry.id === dragState.id);
+            const tab =
+              node?.status === 'BUILDING' || node?.status === 'FAILED'
+                ? 'logs'
+                : selectedNodeId === dragState.id
+                  ? drawerTab
+                  : 'logs';
+            openNodePanel(dragState.id, tab);
+          }
+        }
         setDragState(null);
       }
     };
@@ -128,12 +153,12 @@ export function GridCanvas() {
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleUp);
     };
-  }, [dragState, scale, updateNodePosition, viewport]);
+  }, [dragState, drawerTab, nodes, openNodePanel, scale, selectedNodeId, updateNodePosition, viewport]);
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.target !== event.currentTarget) return;
 
-    setSelectedNodeId(null);
+    closeNodePanel();
     setDragState({
       mode: 'pan',
       pointerId: event.pointerId,
@@ -153,13 +178,14 @@ export function GridCanvas() {
     if (!node) return;
 
     const rect = canvas.getBoundingClientRect();
-    setSelectedNodeId(id);
     setDragState({
       mode: 'node',
       pointerId: event.pointerId,
       id,
       offsetX: (event.clientX - rect.left - viewport.x) / scale - node.positionX,
       offsetY: (event.clientY - rect.top - viewport.y) / scale - node.positionY,
+      originX: event.clientX,
+      originY: event.clientY,
     });
   };
 
@@ -188,7 +214,7 @@ export function GridCanvas() {
       ref={canvasRef}
       onPointerDown={handleCanvasPointerDown}
       onWheel={handleWheel}
-      className="relative h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 select-none touch-none"
+      className="relative h-screen w-screen overflow-hidden bg-brand-950 text-zinc-100 select-none touch-none"
     >
       {/* Dynamic Background Grid: 
         backgroundPosition tracks viewport pan, backgroundSize tracks scale zoom dynamically.
@@ -196,7 +222,7 @@ export function GridCanvas() {
       <div 
         className="absolute inset-0 transition-opacity duration-300"
         style={{
-          backgroundImage: 'radial-gradient(#27272a 1.2px, transparent 1.2px)',
+          backgroundImage: 'radial-gradient(rgba(147, 51, 234, 0.15) 1.2px, transparent 1.2px)',
           backgroundSize: `${18 * scale}px ${18 * scale}px`,
           backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         }}
@@ -204,15 +230,15 @@ export function GridCanvas() {
 
       {loading ? (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/90 px-6 py-5 shadow-2xl">
-            <div className="h-10 w-10 rounded-full border-4 border-zinc-800 border-t-sky-500 animate-spin" />
+          <div className="flex flex-col items-center gap-3 rounded-gf-2xl border border-brand-700/50 bg-brand-900/90 px-6 py-5 shadow-panel">
+            <div className="h-10 w-10 rounded-full border-4 border-brand-700 border-t-accent animate-spin" />
             <p className="text-sm text-zinc-200 font-medium mt-2">Initializing Canvas Architecture…</p>
             {error && <p className="max-w-xs text-center text-xs text-rose-400">{error}</p>}
           </div>
         </div>
       ) : (
         <>
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.05),transparent_35%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(147,51,234,0.1),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(124,58,237,0.06),transparent_35%)]" />
 
           {/* Unified Canvas Workspace:
             Transforms entire viewport using high-performance 3D matrix.
@@ -240,7 +266,6 @@ export function GridCanvas() {
                   key={node.id}
                   node={node}
                   selected={selectedNodeId === node.id}
-                  onSelect={setSelectedNodeId}
                   onPointerDown={handleNodePointerDown}
                 />
               ))}
@@ -248,8 +273,8 @@ export function GridCanvas() {
           </div>
 
           {/* Persistent Onboarding HUD HUD */}
-          <div className="pointer-events-none absolute left-6 top-6 z-10 rounded-2xl border border-zinc-800/80 bg-zinc-950/70 px-4 py-3 shadow-xl backdrop-blur-md max-w-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-sky-400">Deployment Canvas</p>
+          <div className="pointer-events-none absolute left-6 top-6 z-10 max-w-sm rounded-gf-2xl border border-brand-700/50 bg-brand-900/70 px-4 py-3 shadow-panel backdrop-blur-md">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand-300">Deployment Canvas</p>
             <p className="mt-1 text-xs text-zinc-400 leading-relaxed">
               Drag workspace to pan, scroll to scale viewport. Select and drag live nodes to map routing infrastructure configurations.
             </p>

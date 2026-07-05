@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const drawerOpen = Boolean(selectedNodeId);
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-zinc-950">
+    <main className="relative h-screen w-screen overflow-hidden bg-brand-950">
       <GridCanvas />
       {/* Quota widget fades out when drawer opens, fades in when closed */}
       <div

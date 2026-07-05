@@ -130,7 +130,7 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 shadow-glow">
+    <div className="rounded-gf-2xl border border-brand-700/50 bg-brand-900/90 p-4 shadow-glow">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium text-zinc-100">Environment Variables</h2>
@@ -139,7 +139,7 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
       </div>
 
       {loading ? (
-        <div className="mb-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-500">
+        <div className="mb-3 rounded-2xl border border-brand-700 bg-brand-900/80 p-4 text-sm text-zinc-500">
           Loading environment variables…
         </div>
       ) : null}
@@ -159,7 +159,7 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
           type="button"
           onClick={handleAddRow}
           disabled={addingRow || !deploymentId}
-          className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-full border border-brand-600 bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="h-3.5 w-3.5" />
           {addingRow ? 'Adding…' : 'Add Row'}
@@ -168,27 +168,27 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
           type="button"
           onClick={handleRestartAndApply}
           disabled={restarting || !deploymentId}
-          className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-xs font-medium text-sky-200 transition hover:bg-sky-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-brand-200 transition hover:bg-accent/15 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCcw className={`h-3.5 w-3.5 ${restarting ? 'animate-spin' : ''}`} />
           {restarting ? 'Restarting…' : 'Restart & Apply Changes'}
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800">
-        <div className="grid grid-cols-[1.2fr_1.8fr_auto] border-b border-zinc-800 bg-zinc-900/70 px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+      <div className="overflow-hidden rounded-2xl border border-brand-700">
+        <div className="grid grid-cols-[1.2fr_1.8fr_auto] border-b border-brand-700 bg-brand-850/70 px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
           <span className="font-mono">Key</span>
           <span className="font-mono">Value</span>
           <span className="font-mono">Actions</span>
         </div>
-        <div className="divide-y divide-zinc-800">
-          <div className="grid grid-cols-[1.2fr_1.8fr_auto] gap-2 bg-zinc-950/50 px-4 py-3">
+        <div className="divide-y divide-brand-700/50">
+          <div className="grid grid-cols-[1.2fr_1.8fr_auto] gap-2 bg-brand-900/50 px-4 py-3">
             <input
               value={draftKey}
               onChange={(e) => setDraftKey(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddRow()}
               placeholder="NEW_SECRET"
-              className="min-w-0 rounded-xl border border-dashed border-zinc-700 bg-zinc-950/80 px-3 py-2 text-sm font-mono text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/60"
+              className="min-w-0 rounded-xl border border-dashed border-brand-600 bg-brand-900/80 px-3 py-2 text-sm font-mono text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent/60"
             />
             <input
               value={draftValue}
@@ -196,13 +196,13 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
               onKeyDown={(e) => e.key === 'Enter' && handleAddRow()}
               placeholder="••••••"
               type="password"
-              className="min-w-0 rounded-xl border border-dashed border-zinc-700 bg-zinc-950/80 px-3 py-2 text-sm font-mono text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-sky-500/60"
+              className="min-w-0 rounded-xl border border-dashed border-brand-600 bg-brand-900/80 px-3 py-2 text-sm font-mono text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent/60"
             />
             <button
               type="button"
               onClick={handleAddRow}
               disabled={addingRow}
-              className="rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-zinc-100 transition hover:border-zinc-700 hover:bg-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-xl border border-brand-700 bg-brand-900/80 px-3 py-2 text-zinc-100 transition hover:border-brand-600 hover:bg-brand-850 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Add environment variable"
             >
               <Plus className="h-4 w-4" />
@@ -218,17 +218,17 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
 
           {envItems.map((item, index) => (
             <div key={`${item.key}-${index}`} className="grid grid-cols-[1.2fr_1.8fr_auto] gap-2 px-4 py-3">
-              <div className="min-w-0 truncate rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 font-mono text-sm text-zinc-100" title={item.key}>
+              <div className="min-w-0 truncate rounded-xl border border-brand-700 bg-brand-900/80 px-3 py-2 font-mono text-sm text-zinc-100" title={item.key}>
                 {item.key}
               </div>
-              <div className="min-w-0 truncate rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 font-mono text-sm text-zinc-100">
+              <div className="min-w-0 truncate rounded-xl border border-brand-700 bg-brand-900/80 px-3 py-2 font-mono text-sm text-zinc-100">
                 {maskedValue}
               </div>
               <button
                 type="button"
                 onClick={() => handleDeleteRow(item.key)}
                 disabled={deletingKey === item.key}
-                className="rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-zinc-400 transition hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-xl border border-brand-700 bg-brand-900/80 px-3 py-2 text-zinc-400 transition hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Delete environment variable"
               >
                 <Trash2 className={`h-4 w-4 ${deletingKey === item.key ? 'animate-pulse' : ''}`} />

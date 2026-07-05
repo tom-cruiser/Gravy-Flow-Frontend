@@ -40,17 +40,17 @@ function MetricCard({ label, current, total, suffix, decimals = 0 }: MetricCardP
   const utilization = total > 0 ? Math.min(current / total, 1) : 0;
   const isCritical = utilization >= 0.9;
   const percentage = Math.round(utilization * 100);
-  const accentClass = isCritical ? 'bg-rose-500' : 'bg-sky-400';
+  const accentClass = isCritical ? 'bg-rose-500' : 'bg-accent';
 
   return (
-    <div className="space-y-2 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4">
+    <div className="space-y-2 rounded-gf-2xl border border-brand-700/50 bg-brand-900/80 p-4">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-medium text-zinc-100">{label}</p>
         <p className={`text-xs font-medium ${isCritical ? 'text-rose-300' : 'text-zinc-500'}`}>
           {current.toFixed(decimals)} / {total.toFixed(decimals)} {suffix}
         </p>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+      <div className="h-2 overflow-hidden rounded-full bg-brand-700/60">
         <div className={`h-full rounded-full transition-all ${accentClass}`} style={{ width: `${percentage}%` }} />
       </div>
       <p className={`text-[11px] uppercase tracking-[0.22em] ${isCritical ? 'text-rose-300' : 'text-zinc-500'}`}>
@@ -104,26 +104,26 @@ export function QuotaWidget() {
   }, [hasHydrated, user]);
 
   return (
-    <aside className="w-[340px] max-w-[calc(100vw-3rem)] rounded-[1.5rem] border border-zinc-800 bg-zinc-950/90 p-4 text-zinc-100 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur">
+    <aside className="w-[340px] max-w-[calc(100vw-3rem)] rounded-[1.5rem] border border-brand-700/50 bg-brand-900/90 p-4 text-zinc-100 shadow-panel backdrop-blur">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500">Resource Quota</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-100">{title}</h2>
         </div>
-        <span className="rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300">
+        <span className="rounded-full border border-brand-600 bg-brand-800 px-2.5 py-1 text-[11px] font-medium text-brand-200">
           Live
         </span>
       </div>
 
       {!hasHydrated ? (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-500">Hydrating session…</div>
+        <div className="rounded-gf-2xl border border-brand-700/50 bg-brand-900/80 p-4 text-sm text-zinc-500">Hydrating session…</div>
       ) : null}
 
       {hasHydrated && !user ? (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-500">Sign in to see usage limits.</div>
+        <div className="rounded-gf-2xl border border-brand-700/50 bg-brand-900/80 p-4 text-sm text-zinc-500">Sign in to see usage limits.</div>
       ) : null}
 
-      {loading ? <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-500">Loading quota…</div> : null}
+      {loading ? <div className="rounded-gf-2xl border border-brand-700/50 bg-brand-900/80 p-4 text-sm text-zinc-500">Loading quota…</div> : null}
       {errorMessage ? <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">{errorMessage}</div> : null}
 
       {quota ? (

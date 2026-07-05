@@ -1,19 +1,17 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ToastProvider } from '@/components/toast/ToastProvider';
 import './globals.css';
 
-// Inter is a variable font; loading it here self-hosts it at build time and
-// exposes it as a CSS variable consumed by globals.css and Tailwind's font-sans.
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-jakarta',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'GravyFlow',
-  description: 'GravyFlow dashboard canvas',
+  description: 'Infrastructure canvas for modern deployments',
 };
 
 export default function RootLayout({
@@ -22,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={jakarta.variable}>
       <body>
         <ToastProvider>{children}</ToastProvider>
       </body>

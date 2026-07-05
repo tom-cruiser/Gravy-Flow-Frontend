@@ -14,7 +14,6 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Dismiss the popover on outside click or Escape.
   useEffect(() => {
     if (!open) return;
 
@@ -35,8 +34,6 @@ export function AccountMenu() {
     };
   }, [open]);
 
-  // Wait for the persisted session to rehydrate before rendering, and render
-  // nothing when signed out (ProtectedRoute will already be redirecting).
   if (!hasHydrated || !user) return null;
 
   const displayName = user.displayName?.trim() || user.email;
@@ -54,9 +51,9 @@ export function AccountMenu() {
         <div
           role="menu"
           aria-label="Account menu"
-          className="mb-2 w-64 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/95 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="mb-2 w-64 overflow-hidden rounded-gf-2xl border border-brand-700/50 bg-brand-900/95 shadow-panel backdrop-blur animate-in fade-in slide-in-from-bottom-2 duration-150"
         >
-          <div className="border-b border-zinc-800 px-4 py-3">
+          <div className="border-b border-brand-700/50 px-4 py-3">
             <p className="truncate text-sm font-medium text-zinc-100">{user.displayName?.trim() || 'Account'}</p>
             <p className="truncate text-xs text-zinc-500">{user.email}</p>
           </div>
@@ -77,9 +74,9 @@ export function AccountMenu() {
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex max-w-[14rem] items-center gap-3 rounded-full border border-zinc-800 bg-zinc-950/90 py-2 pl-2 pr-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur transition-colors hover:border-zinc-700"
+        className="inline-flex max-w-[14rem] items-center gap-3 rounded-full border border-brand-700/60 bg-brand-900/90 py-2 pl-2 pr-4 text-left shadow-panel backdrop-blur transition-colors hover:border-brand-500"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sm font-semibold text-sky-300">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-brand-200">
           {initial}
         </span>
         <span className="min-w-0">
