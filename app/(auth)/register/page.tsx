@@ -127,17 +127,20 @@ export default function RegisterPage() {
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-400">
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="gf-checkbox mt-0.5"
-          />
-          <span>
-            I agree to the{' '}
-            <span className="gf-link cursor-pointer">Terms &amp; Conditions</span>
-          </span>
-        </label>
+  <input
+    type="checkbox"
+    checked={acceptedTerms}
+    onChange={(e) => setAcceptedTerms(e.target.checked)}
+    className="gf-checkbox mt-0.5"
+    required // Optional: forces HTML5 validation
+  />
+  <span>
+    I agree to the{' '}
+    <Link href="/terms" className="gf-link" target="_blank" rel="noopener noreferrer">
+      Terms &amp; Conditions
+    </Link>
+  </span>
+</label>
 
         <button type="submit" disabled={loading} className="gf-btn-primary">
           {loading ? 'Creating account…' : 'Create account'}
