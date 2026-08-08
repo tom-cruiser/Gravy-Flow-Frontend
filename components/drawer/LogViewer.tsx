@@ -71,7 +71,7 @@ const SESSION_EXPIRED_LINE: LogLine = {
 };
 
 function buildApiWebSocketUrl(path: string, accessToken: string): string {
-  const restBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
+  const restBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1';
   const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
   const url = new URL(`${restBase.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`, origin);
 

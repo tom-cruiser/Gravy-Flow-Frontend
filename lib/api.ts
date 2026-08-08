@@ -8,7 +8,7 @@ function notifySessionExpired() {
   toast.error(SESSION_EXPIRED_MESSAGE, 'Session expired');
 }
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1';
 
 export const api = axios.create({
   baseURL,
