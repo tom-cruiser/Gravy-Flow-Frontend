@@ -39,6 +39,13 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
   const title = useMemo(() => (deploymentId ? `Domains for ${deploymentId}` : 'Domains'), [deploymentId]);
 
   useEffect(() => {
+    // Switching the selected node should not leave behind a half-typed draft
+    // domain, or stale success/error messages, from whatever was previously
+    // selected.
+    setCustomDomain('');
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     if (!deploymentId) {
       setDomains([]);
       return;
@@ -46,7 +53,6 @@ export function DomainManager({ deploymentId }: DomainManagerProps) {
 
     let active = true;
     setLoading(true);
-    setErrorMessage(null);
 
     api
       .get<DomainListResponse>(`/apps/${deploymentId}/domains`)

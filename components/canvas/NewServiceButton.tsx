@@ -5,12 +5,7 @@ import { Plus, X, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useCanvasStore } from '@/store/canvasStore';
-
-function parseDeploymentPort(portMap: string) {
-  const [, internalPortRaw] = portMap.split(':');
-  const parsed = Number.parseInt(internalPortRaw ?? '80', 10);
-  return Number.isFinite(parsed) ? parsed : 80;
-}
+import { parseContainerPort } from '@/lib/portMap';
 
 function centerCanvasPoint() {
   if (typeof window === 'undefined') {
@@ -123,13 +118,13 @@ export function NewServiceButton() {
     try {
       const response = await api.post('/apps', { name, repo });
 
-      if (response.status !== 201 && response.status !== 202) {
+      if (response.status < 200 || response.status >= 300) {
         throw new Error('Provisioning was not accepted by the control plane.');
       }
 
       const { x: screenX, y: screenY } = centerCanvasPoint();
       const center = worldPointFromScreen(screenX, screenY, canvasTransform.viewportX, canvasTransform.viewportY, canvasTransform.scale);
-      const internalPort = parseDeploymentPort(response.data?.app?.portMap ?? '8080:8080');
+      const internalPort = parseContainerPort(response.data?.app?.portMap ?? '8080:8080');
       const deploymentId = response.data?.deploymentId ?? crypto.randomUUID();
       const jobId = response.data?.jobId ?? null;
 

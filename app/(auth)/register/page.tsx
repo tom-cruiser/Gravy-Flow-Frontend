@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, type AuthResponse } from '@/store/authStore';
 import { AuthShell } from '@/components/auth/AuthShell';
 
 export default function RegisterPage() {
@@ -38,7 +38,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const resp = await api.post('/auth/register', { email, password, displayName });
+      const resp = await api.post<AuthResponse>('/auth/register', { email, password, displayName });
       const data = resp.data;
       setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
       router.push('/dashboard');

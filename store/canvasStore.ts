@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 import { toast } from '@/store/toastStore';
+import { parseContainerPort } from '@/lib/portMap';
 
 export type NodeType = 'web' | 'db';
 export type NodeStatus = 'RUNNING' | 'BUILDING' | 'FAILED';
@@ -41,6 +42,7 @@ export type AppRecordDTO = {
   name?: string;
   repo?: string;
   status?: string;
+  statusMessage?: string;
   portMap?: string;
   layout?: { x?: number; y?: number } | null;
 };
@@ -75,12 +77,12 @@ type CanvasStore = {
 
 const initialNodes: CanvasNode[] = [];
 
-function parsePortMap(portMap: string | undefined | null): number {
-  if (!portMap) return 8080;
-  const m = String(portMap).match(/(\d+)(?::\d+)?/);
-  if (m) return Number(m[1]);
-  return 8080;
-}
+// Monotonically increasing token identifying the "current" polling loop.
+// Bumped by both startPollingNodes (to supersede any prior loop) and
+// stopPollingNodes (to invalidate the loop that's currently in flight), so a
+// run() that's mid-await when stopPollingNodes fires won't reschedule itself
+// after the fact.
+let pollGeneration = 0;
 
 function normalizeNodeStatus(raw: string | undefined | null): NodeStatus {
   const upper = String(raw || 'RUNNING').toUpperCase();
@@ -100,7 +102,7 @@ function mapDeploymentToCanvasNode(item: DeploymentRecordDTO, idx: number): Canv
     status: normalizeNodeStatus(item.Status),
     positionX: defaultX,
     positionY: defaultY,
-    internalPort: parsePortMap(item.PortMap),
+    internalPort: parseContainerPort(item.PortMap),
     repo: item.SourceRepoURL || '',
     statusMessage: item.StatusMessage || '',
   };
@@ -116,8 +118,9 @@ function mapAppToCanvasNode(item: AppRecordDTO, idx: number): CanvasNode {
     status: normalizeNodeStatus(item.status),
     positionX: Number(item.layout?.x ?? defaultX),
     positionY: Number(item.layout?.y ?? defaultY),
-    internalPort: parsePortMap(item.portMap ?? undefined),
+    internalPort: parseContainerPort(item.portMap ?? undefined),
     repo: item.repo ?? '',
+    statusMessage: item.statusMessage || '',
   };
 }
 
@@ -191,7 +194,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
           jobId:
             node.status === 'BUILDING' || node.status === 'FAILED'
               ? existing.jobId ?? node.jobId
-              : existing.jobId ?? null,
+              : null,
         };
       });
 
@@ -210,10 +213,15 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   },
   // lightweight polling for near-real-time inventory refresh
   startPollingNodes: (intervalMs = 5000) => {
-    let timer: number | null = null;
+    // Supersede any previously running loop (its run() will see a stale
+    // generation and stop rescheduling itself).
+    pollGeneration += 1;
+    const generation = pollGeneration;
     // Throttle: surface one toast per failure streak, not one every interval.
     let notifiedPollFailure = false;
+
     const run = async () => {
+      if (generation !== pollGeneration) return;
       try {
         await useCanvasStore.getState().loadNodes();
         notifiedPollFailure = false;
@@ -224,14 +232,23 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
           toast.error('Lost connection to the control plane. Retrying…', 'Connection lost');
         }
       }
-      timer = window.setTimeout(run, intervalMs) as unknown as number;
+      // Bail out if stopPollingNodes (or a newer startPollingNodes call) ran
+      // while we were awaiting above, so we don't resurrect a stopped loop.
+      if (generation !== pollGeneration) return;
+      // Always write the *current* timer id to the shared handle so
+      // stopPollingNodes can actually cancel the pending reschedule, not just
+      // the very first one.
+      (window as any).__canvas_polling_timer = window.setTimeout(run, intervalMs) as unknown as number;
     };
+
     if ((window as any).__canvas_polling_timer) {
       window.clearTimeout((window as any).__canvas_polling_timer);
     }
     (window as any).__canvas_polling_timer = window.setTimeout(run, 0) as unknown as number;
   },
   stopPollingNodes: () => {
+    // Invalidate the loop so an in-flight run() won't reschedule after this.
+    pollGeneration += 1;
     if ((window as any).__canvas_polling_timer) {
       window.clearTimeout((window as any).__canvas_polling_timer);
       (window as any).__canvas_polling_timer = null;

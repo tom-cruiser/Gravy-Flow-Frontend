@@ -36,6 +36,13 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
   }, [deploymentId]);
 
   useEffect(() => {
+    // Switching the selected node should not leave behind a half-typed draft,
+    // or stale success/error messages, from whatever was previously selected.
+    setDraftKey('');
+    setDraftValue('');
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     if (!deploymentId) {
       setEnvItems([]);
       return;
@@ -43,7 +50,6 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
 
     let active = true;
     setLoading(true);
-    setErrorMessage(null);
 
     api
       .get<EnvListResponse>(`/apps/${deploymentId}/env`)
@@ -80,7 +86,7 @@ export function EnvManager({ deploymentId }: EnvManagerProps) {
 
     try {
       await api.post(`/apps/${deploymentId}/env`, { key, value });
-      setEnvItems((current) => [...current, { key, value: maskedValue }]);
+      setEnvItems((current) => [...current.filter((i) => i.key !== key), { key, value: maskedValue }]);
       setDraftKey('');
       setDraftValue('');
       setSuccessMessage(`✓ Added ${key} successfully`);

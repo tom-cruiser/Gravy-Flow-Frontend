@@ -7,6 +7,13 @@ export type AuthUser = {
   displayName: string;
 };
 
+// Shape returned by POST /auth/login and POST /auth/register.
+export type AuthResponse = {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+};
+
 type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
