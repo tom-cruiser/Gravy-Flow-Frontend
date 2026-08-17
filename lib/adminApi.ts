@@ -330,3 +330,47 @@ export function mfaEnroll() {
 export function mfaEnable(code: string) {
   return api.post<{ message: string }>('/auth/mfa/enable', { code }).then((r) => r.data);
 }
+
+// ---------------------------------------------------------------------------
+// Module E: Admin Profile & Credentials Management (self-service — the
+// backend routes live under /admin/profile because they're gated by
+// AdminMiddleware, but every action here targets the CALLER's own account.
+// See GravyFlow-Backend-'s cmd/api/admin_profile.go.)
+// ---------------------------------------------------------------------------
+
+export type ChangePasswordResult = {
+  message: string;
+  sessionsRevoked: boolean;
+  // Present only when logoutOtherDevices was true — the backend revokes
+  // every refresh token for the account (including this session's) and
+  // re-issues a fresh pair in the same response so the caller isn't logged
+  // out by their own request. The caller must feed these into
+  // useAuthStore's setSession.
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+};
+
+export type PasswordChangeError = {
+  error: 'invalid_current_password' | 'weak_password' | 'password_reuse' | string;
+  violations?: string[];
+  details?: string;
+};
+
+export function changePassword(currentPassword: string, newPassword: string, logoutOtherDevices: boolean) {
+  return api
+    .post<ChangePasswordResult>('/admin/profile/password', {
+      currentPassword,
+      newPassword,
+      logoutOtherDevices,
+    })
+    .then((r) => r.data);
+}
+
+export function disableMFA(currentPassword: string) {
+  return api.post<{ message: string }>('/admin/profile/mfa/disable', { currentPassword }).then((r) => r.data);
+}
+
+export function regenerateRecoveryCodes() {
+  return api.post<{ codes: string[] }>('/admin/profile/mfa/recovery-codes/regenerate').then((r) => r.data);
+}

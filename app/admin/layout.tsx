@@ -88,12 +88,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             <div className="space-y-1 border-t border-brand-700/50 p-3">
               <Link
-                href="/admin/mfa-setup"
-                className="flex items-center gap-3 rounded-gf px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-brand-800/60 hover:text-zinc-100"
-                title={collapsed ? 'Security' : undefined}
+                href="/admin/profile"
+                className={`flex items-center gap-3 rounded-gf px-3 py-2.5 text-sm font-medium transition-colors ${
+                  pathname.startsWith('/admin/profile')
+                    ? 'bg-accent text-zinc-900 shadow-glow-accent'
+                    : 'text-zinc-400 hover:bg-brand-800/60 hover:text-zinc-100'
+                }`}
+                title={collapsed ? 'Profile & security' : undefined}
               >
                 <ShieldCheck className={`h-4 w-4 shrink-0 ${mfaEnabled ? 'text-emerald-400' : 'text-amber-400'}`} />
-                {!collapsed && <span>Security {mfaEnabled ? '(MFA on)' : '(MFA off)'}</span>}
+                {!collapsed && <span>Profile & security {mfaEnabled ? '(MFA on)' : '(MFA off)'}</span>}
               </Link>
               <button
                 type="button"
