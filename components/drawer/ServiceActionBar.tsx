@@ -72,7 +72,7 @@ export function ServiceActionBar({ deploymentId, nodeStatus, serviceName }: Serv
           type="button"
           onClick={handleAction}
           disabled={loading}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-accent/30 bg-accent px-4 py-2 text-xs font-semibold text-zinc-900 shadow-glow-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-accent/30 bg-accent px-4 py-2 text-xs font-semibold text-white shadow-glow-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           <RefreshCcw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           {loading ? 'Queuing…' : label}

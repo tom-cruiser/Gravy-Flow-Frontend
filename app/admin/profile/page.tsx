@@ -1,4 +1,4 @@
-import { PasswordForm } from './password-form';
+import { PasswordForm } from '@/components/settings/PasswordForm';
 import { MFAManagement } from './mfa-management';
 
 // Admin Profile & Credentials Management (Module E). Everything on this page

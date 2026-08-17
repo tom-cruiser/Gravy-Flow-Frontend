@@ -8,8 +8,10 @@
   --gf-surface: #101010;
   --gf-panel: #1a1a1a;
   --gf-border: rgba(255, 255, 255, 0.12);
-  --gf-accent: #e8e8e8;
-  --gf-accent-hover: #ffffff;
+  /* Kept in sync with the accent.DEFAULT/hover tokens in tailwind.config.ts
+     (sampled from eliseai.com's CTA color, #7638fa). */
+  --gf-accent: #7638fa;
+  --gf-accent-hover: #9061fb;
 }
 
 html,
@@ -20,7 +22,7 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 255, 255, 0.08), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(118, 56, 250, 0.12), transparent 55%),
     var(--gf-bg);
   color: #f4f4f5;
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
@@ -37,9 +39,7 @@ body {
   }
 
   .gf-btn-primary {
-    /* accent is a light gray/white fill, so its text needs to stay dark
-       for contrast — unlike every other pairing in this file */
-    @apply inline-flex w-full items-center justify-center rounded-gf bg-accent px-4 py-3 text-sm font-semibold text-zinc-900 transition-all;
+    @apply inline-flex w-full items-center justify-center rounded-gf bg-accent px-4 py-3 text-sm font-semibold text-white transition-all;
     @apply hover:bg-accent-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
     @apply shadow-glow-accent;
   }
@@ -87,8 +87,8 @@ body {
   }
 
   .gf-checkbox:checked {
-    /* checkmark fill is dark so it reads against the now-light accent fill */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%2318181b' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E");
+    /* checkmark fill is white so it reads against the violet accent fill */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E");
     background-size: 100% 100%;
   }
 }

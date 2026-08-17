@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -48,12 +49,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <div className="flex items-center justify-between border-b border-brand-700/50 px-4 py-5">
-              {!collapsed && (
-                <Link href="/admin" className="text-sm font-bold tracking-tight text-white">
-                  Gravy<span className="text-brand-300">Flow</span>{' '}
-                  <span className="text-zinc-500">Admin</span>
-                </Link>
-              )}
+              <Link href="/admin" className="flex items-center gap-2 text-sm font-bold tracking-tight text-white">
+                <Image src="/logo-mark-white.png" alt="GravyFlow" width={16} height={28} className="shrink-0" priority />
+                {!collapsed && (
+                  <span>
+                    Gravy<span className="text-brand-300">Flow</span>{' '}
+                    <span className="text-zinc-500">Admin</span>
+                  </span>
+                )}
+              </Link>
               <button
                 type="button"
                 onClick={() => setCollapsed((c) => !c)}
@@ -74,7 +78,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     href={item.href}
                     className={`flex items-center gap-3 rounded-gf px-3 py-2.5 text-sm font-medium transition-colors ${
                       active
-                        ? 'bg-accent text-zinc-900 shadow-glow-accent'
+                        ? 'bg-accent text-white shadow-glow-accent'
                         : 'text-zinc-400 hover:bg-brand-800/60 hover:text-zinc-100'
                     }`}
                     title={collapsed ? item.label : undefined}
@@ -91,7 +95,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 href="/admin/profile"
                 className={`flex items-center gap-3 rounded-gf px-3 py-2.5 text-sm font-medium transition-colors ${
                   pathname.startsWith('/admin/profile')
-                    ? 'bg-accent text-zinc-900 shadow-glow-accent'
+                    ? 'bg-accent text-white shadow-glow-accent'
                     : 'text-zinc-400 hover:bg-brand-800/60 hover:text-zinc-100'
                 }`}
                 title={collapsed ? 'Profile & security' : undefined}

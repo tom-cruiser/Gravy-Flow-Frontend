@@ -12,7 +12,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-accent text-zinc-900 shadow-glow-accent hover:bg-accent-hover active:scale-[0.98]',
+        default: 'bg-accent text-white shadow-glow-accent hover:bg-accent-hover active:scale-[0.98]',
         destructive: 'bg-rose-600 text-white hover:bg-rose-500 active:scale-[0.98]',
         outline:
           'border border-brand-600/80 bg-transparent text-zinc-300 hover:border-brand-500 hover:bg-brand-800/40 hover:text-zinc-100',

@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
@@ -8,14 +9,15 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-1/2 bg-auth-visual opacity-40 md:block" />
 
       <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-10">
-        <p className="text-2xl font-bold tracking-tight">
+        <p className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+          <Image src="/logo-mark-white.png" alt="GravyFlow" width={18} height={32} priority />
           Gravy<span className="text-brand-300">Flow</span>
         </p>
         <div className="flex items-center gap-3">
           <Link href="/login" className="gf-btn-ghost text-sm">
             Log in
           </Link>
-          <Link href="/register" className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-zinc-900 shadow-glow-accent transition hover:bg-accent-hover sm:inline-flex">
+          <Link href="/register" className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-glow-accent transition hover:bg-accent-hover sm:inline-flex">
             Get started
           </Link>
         </div>
@@ -30,7 +32,7 @@ export default function HomePage() {
           Map services on a live canvas, stream logs, manage secrets, and attach custom domains — all from one unified workspace.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/register" className="inline-flex items-center gap-2 rounded-gf bg-accent px-6 py-3 text-sm font-semibold text-zinc-900 shadow-glow-accent transition hover:bg-accent-hover">
+          <Link href="/register" className="inline-flex items-center gap-2 rounded-gf bg-accent px-6 py-3 text-sm font-semibold text-white shadow-glow-accent transition hover:bg-accent-hover">
             Create free account
             <ArrowRight className="h-4 w-4" />
           </Link>

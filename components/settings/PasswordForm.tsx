@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { changePassword, type PasswordChangeError } from '@/lib/adminApi';
+import { changePassword, type PasswordChangeError } from '@/lib/profileApi';
 import { evaluatePasswordRules, passwordMeetsAllRules, SERVER_VIOLATION_MESSAGES } from '@/lib/passwordRules';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
@@ -51,12 +51,12 @@ function PasswordVisibilityToggle({ visible, onToggle }: { visible: boolean; onT
   );
 }
 
-// Admin Profile & Credentials Management (Module E) — self-service password
-// rotation for the signed-in admin/SRE's own account. Talks to
-// GravyFlow-Backend-'s POST /admin/profile/password (cmd/api/admin_profile.go),
-// which verifies currentPassword server-side, re-validates strength, hashes
-// with bcrypt, optionally revokes every other session's refresh token, and
-// records an audit log entry either way.
+// Self-service password rotation, shared by /admin/profile and
+// /dashboard/settings — any authenticated user, not just admins, since the
+// backend endpoint (POST /profile/password, admin_profile.go) only ever acts
+// on the caller's own account. It verifies currentPassword server-side,
+// re-validates strength, hashes with bcrypt, optionally revokes every other
+// session's refresh token, and records an audit log entry either way.
 export function PasswordForm() {
   const user = useAuthStore((s) => s.user);
   const setSession = useAuthStore((s) => s.setSession);

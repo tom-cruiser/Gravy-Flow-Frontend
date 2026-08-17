@@ -18,7 +18,11 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      // Darker + more blurred than a generic overlay: the dialog panel's own
+      // fill (brand-800, still a dark neutral in this monochrome system) is
+      // close in value to the page behind it, so the overlay has to do more
+      // of the work of visually separating "in front" from "behind."
+      'fixed inset-0 z-50 bg-black/80 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
     )}
     {...props}
@@ -35,7 +39,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 gf-panel p-6 shadow-panel duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        // Overrides gf-panel's border/bg (not a change to that shared class
+        // itself — Cards elsewhere still use the quieter default): a dialog
+        // needs to read as clearly in front of the page, so it gets a
+        // lighter, more opaque fill, a brighter border, and shadow-modal's
+        // light ring + deep drop shadow instead of gf-panel's plain fill and
+        // shadow-panel's shadow-only (no ring) elevation.
+        'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 gf-panel border-brand-500/70 bg-brand-800/95 p-6 shadow-modal duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
         className,
       )}
       {...props}

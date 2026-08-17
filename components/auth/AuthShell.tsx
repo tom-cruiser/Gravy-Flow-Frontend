@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
@@ -43,7 +44,8 @@ export function AuthShell({ children, backHref = '/', backLabel = 'Back to websi
         {/* Visual panel */}
         <section className="relative hidden min-h-[640px] flex-col justify-between bg-auth-visual p-10 md:flex">
           <div className="flex items-start justify-between gap-4">
-            <Link href="/" className="text-2xl font-bold tracking-tight text-white">
+            <Link href="/" className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white">
+              <Image src="/logo-mark-white.png" alt="GravyFlow" width={20} height={36} priority />
               Gravy<span className="text-brand-300">Flow</span>
             </Link>
             <Link href={backHref} className="gf-btn-ghost gap-1.5 text-xs">
