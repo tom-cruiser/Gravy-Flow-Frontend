@@ -8,6 +8,15 @@ import { api } from '@/lib/api';
 import { useAuthStore, type AuthResponse } from '@/store/authStore';
 import { AuthShell } from '@/components/auth/AuthShell';
 
+// Returned by POST /auth/login instead of AuthResponse when the account has
+// MFA enabled (see loginHandler in GravyFlow-Backend-'s auth.go) — the caller
+// must complete POST /auth/mfa/verify with this token plus a live TOTP code.
+type MFALoginResponse = {
+  mfaRequired: true;
+  mfaToken: string;
+  expiresIn: number;
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
@@ -17,6 +26,28 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Set once loginHandler responds with mfaRequired; while set, the form
+  // below swaps to a TOTP code prompt instead of email/password.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+
+  const describeError = (err: unknown, fallback: string) => {
+    const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string };
+    const backendError = axiosErr?.response?.data?.error;
+    const statusCode = axiosErr?.response?.status;
+
+    if (statusCode === 401 || backendError === 'invalid_credentials') {
+      return 'Invalid email or password.';
+    }
+    if (backendError) {
+      return String(backendError).replace(/_/g, ' ');
+    }
+    if (axiosErr?.message) {
+      return String(axiosErr.message);
+    }
+    return fallback;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,29 +59,88 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const resp = await api.post<AuthResponse>('/auth/login', { email, password });
+      const resp = await api.post<AuthResponse | MFALoginResponse>('/auth/login', { email, password });
       const data = resp.data;
-      setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
-      router.push('/dashboard');
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string };
-      const backendError = axiosErr?.response?.data?.error;
-      const statusCode = axiosErr?.response?.status;
-
-      let message = 'Login failed. Please try again.';
-      if (statusCode === 401 || backendError === 'invalid_credentials') {
-        message = 'Invalid email or password.';
-      } else if (backendError) {
-        message = String(backendError).replace(/_/g, ' ');
-      } else if (axiosErr?.message) {
-        message = String(axiosErr.message);
+      if (!('accessToken' in data)) {
+        setMfaToken(data.mfaToken);
+        return;
       }
-
-      setError(message);
+      setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
+      router.push(data.user.isAdmin ? '/admin' : '/dashboard');
+    } catch (err: unknown) {
+      setError(describeError(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
+
+  const submitMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!mfaToken || !mfaCode) {
+      setError('Enter the 6-digit code from your authenticator app');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await api.post<AuthResponse>('/auth/mfa/verify', { mfaToken, code: mfaCode });
+      const data = resp.data;
+      setSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
+      router.push(data.user.isAdmin ? '/admin' : '/dashboard');
+    } catch (err: unknown) {
+      setError(describeError(err, 'Verification failed. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mfaToken) {
+    return (
+      <AuthShell>
+        <div className="mb-8 space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Two-factor verification</h1>
+          <p className="text-sm text-zinc-400">Enter the 6-digit code from your authenticator app.</p>
+        </div>
+
+        {error ? (
+          <div className="mb-5 flex items-start gap-2.5 rounded-gf border border-rose-500/25 bg-rose-500/10 p-3 text-xs text-rose-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+            <span className="leading-relaxed">{error}</span>
+          </div>
+        ) : null}
+
+        <form onSubmit={submitMfa} className="space-y-4">
+          <input
+            id="mfaCode"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            className="gf-input text-center text-lg tracking-[0.5em]"
+            placeholder="000000"
+            autoFocus
+            required
+          />
+          <button type="submit" disabled={loading} className="gf-btn-primary mt-2">
+            {loading ? 'Verifying…' : 'Verify'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMfaToken(null);
+              setMfaCode('');
+              setError(null);
+            }}
+            className="gf-link block w-full text-center text-xs"
+          >
+            Back to sign in
+          </button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell>

@@ -12,7 +12,7 @@ const variantConfig: Record<
   success: { Icon: CheckCircle2, iconClass: 'text-emerald-400', border: 'border-emerald-500/30', glow: 'shadow-[0_0_30px_rgba(16,185,129,0.08)]' },
   error: { Icon: AlertCircle, iconClass: 'text-rose-400', border: 'border-rose-500/30', glow: 'shadow-[0_0_30px_rgba(244,63,94,0.1)]' },
   warning: { Icon: AlertTriangle, iconClass: 'text-amber-400', border: 'border-amber-500/30', glow: 'shadow-[0_0_30px_rgba(245,158,11,0.08)]' },
-  info: { Icon: Info, iconClass: 'text-brand-300', border: 'border-accent/30', glow: 'shadow-[0_0_30px_rgba(147,51,234,0.08)]' },
+  info: { Icon: Info, iconClass: 'text-brand-300', border: 'border-accent/30', glow: 'shadow-[0_0_30px_rgba(255,255,255,0.10)]' },
 };
 
 const EXIT_ANIMATION_MS = 200;

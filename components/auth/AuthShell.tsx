@@ -15,7 +15,7 @@ const SLIDES = [
   },
   {
     tagline: 'Built for modern control planes.',
-    caption: 'Logs, secrets, and DNS — all in one purple-tinted workspace.',
+    caption: 'Logs, secrets, and DNS — all in one unified workspace.',
   },
 ];
 

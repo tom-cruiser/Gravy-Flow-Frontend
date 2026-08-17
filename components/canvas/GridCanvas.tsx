@@ -222,7 +222,7 @@ export function GridCanvas() {
       <div 
         className="absolute inset-0 transition-opacity duration-300"
         style={{
-          backgroundImage: 'radial-gradient(rgba(147, 51, 234, 0.15) 1.2px, transparent 1.2px)',
+          backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.12) 1.2px, transparent 1.2px)',
           backgroundSize: `${18 * scale}px ${18 * scale}px`,
           backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         }}
@@ -238,7 +238,7 @@ export function GridCanvas() {
         </div>
       ) : (
         <>
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(147,51,234,0.1),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(124,58,237,0.06),transparent_35%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.05),transparent_35%)]" />
 
           {/* Unified Canvas Workspace:
             Transforms entire viewport using high-performance 3D matrix.

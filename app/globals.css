@@ -4,12 +4,12 @@
 
 :root {
   color-scheme: dark;
-  --gf-bg: #07040f;
-  --gf-surface: #12091c;
-  --gf-panel: #1a1025;
-  --gf-border: rgba(147, 51, 234, 0.14);
-  --gf-accent: #9333ea;
-  --gf-accent-hover: #a855f7;
+  --gf-bg: #050505;
+  --gf-surface: #101010;
+  --gf-panel: #1a1a1a;
+  --gf-border: rgba(255, 255, 255, 0.12);
+  --gf-accent: #e8e8e8;
+  --gf-accent-hover: #ffffff;
 }
 
 html,
@@ -20,7 +20,7 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(147, 51, 234, 0.14), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 255, 255, 0.08), transparent 55%),
     var(--gf-bg);
   color: #f4f4f5;
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
@@ -37,7 +37,9 @@ body {
   }
 
   .gf-btn-primary {
-    @apply inline-flex w-full items-center justify-center rounded-gf bg-accent px-4 py-3 text-sm font-semibold text-white transition-all;
+    /* accent is a light gray/white fill, so its text needs to stay dark
+       for contrast — unlike every other pairing in this file */
+    @apply inline-flex w-full items-center justify-center rounded-gf bg-accent px-4 py-3 text-sm font-semibold text-zinc-900 transition-all;
     @apply hover:bg-accent-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
     @apply shadow-glow-accent;
   }
@@ -85,7 +87,8 @@ body {
   }
 
   .gf-checkbox:checked {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E");
+    /* checkmark fill is dark so it reads against the now-light accent fill */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%2318181b' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E");
     background-size: 100% 100%;
   }
 }

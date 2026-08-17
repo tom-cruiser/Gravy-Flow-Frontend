@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 export function AccountMenu() {
@@ -57,6 +58,17 @@ export function AccountMenu() {
             <p className="truncate text-sm font-medium text-zinc-100">{user.displayName?.trim() || 'Account'}</p>
             <p className="truncate text-xs text-zinc-500">{user.email}</p>
           </div>
+          {user.isAdmin && (
+            <Link
+              href="/admin"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-zinc-200 transition-colors hover:bg-brand-800/60"
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0 text-brand-300" />
+              Admin panel
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"

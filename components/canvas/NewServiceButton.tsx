@@ -158,7 +158,7 @@ export function NewServiceButton() {
         ref={triggerRef}
         type="button"
         onClick={openModal}
-        className="fixed bottom-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-accent/30 bg-accent px-6 py-3 text-sm font-semibold text-white shadow-glow-accent transition-all hover:bg-accent-hover active:scale-[0.98]"
+        className="fixed bottom-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-accent/30 bg-accent px-6 py-3 text-sm font-semibold text-zinc-900 shadow-glow-accent transition-all hover:bg-accent-hover active:scale-[0.98]"
       >
         <Plus className="h-4 w-4 stroke-[3]" />
         {buttonLabel}

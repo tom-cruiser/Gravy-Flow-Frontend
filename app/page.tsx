@@ -15,7 +15,7 @@ export default function HomePage() {
           <Link href="/login" className="gf-btn-ghost text-sm">
             Log in
           </Link>
-          <Link href="/register" className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-glow-accent transition hover:bg-accent-hover sm:inline-flex">
+          <Link href="/register" className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-zinc-900 shadow-glow-accent transition hover:bg-accent-hover sm:inline-flex">
             Get started
           </Link>
         </div>
@@ -27,10 +27,10 @@ export default function HomePage() {
           Infrastructure canvas for modern deployments.
         </h1>
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-          Map services on a live canvas, stream logs, manage secrets, and attach custom domains — all from one purple-tinted workspace.
+          Map services on a live canvas, stream logs, manage secrets, and attach custom domains — all from one unified workspace.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/register" className="inline-flex items-center gap-2 rounded-gf bg-accent px-6 py-3 text-sm font-semibold text-white shadow-glow-accent transition hover:bg-accent-hover">
+          <Link href="/register" className="inline-flex items-center gap-2 rounded-gf bg-accent px-6 py-3 text-sm font-semibold text-zinc-900 shadow-glow-accent transition hover:bg-accent-hover">
             Create free account
             <ArrowRight className="h-4 w-4" />
           </Link>

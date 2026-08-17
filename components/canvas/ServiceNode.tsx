@@ -39,7 +39,7 @@ export function ServiceNode({ node, selected, onPointerDown }: ServiceNodeProps)
       onPointerDown={(event) => onPointerDown(event, node.id)}
       className={`pointer-events-auto group absolute w-[260px] rounded-gf-2xl border bg-brand-850/90 p-4 text-left backdrop-blur-md transition-shadow duration-150 ease-out will-change-transform ${
         selected
-          ? 'border-accent ring-1 ring-accent/40 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(147,51,234,0.18)] z-10'
+          ? 'border-accent ring-1 ring-accent/40 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(255,255,255,0.16)] z-10'
           : 'border-brand-700/60 hover:border-brand-500/60 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)]'
       }`}
       style={{
