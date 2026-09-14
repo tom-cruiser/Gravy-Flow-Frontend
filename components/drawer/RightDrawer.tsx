@@ -133,7 +133,7 @@ export function RightDrawer({ open }: RightDrawerProps) {
             </div>
             {drawerTab === 'env' ? (
               <div className="h-full">
-                <EnvManager deploymentId={selectedNodeId} />
+                <EnvManager deploymentId={selectedNodeId} serviceName={selectedNode?.name ?? null} />
               </div>
             ) : null}
             {drawerTab === 'networking' ? (
