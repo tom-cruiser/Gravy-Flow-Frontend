@@ -59,7 +59,7 @@ export function previewValue(entry: ParsedEnvEntry): string {
  * Returns the adapted key plus a note for every transformation applied, so the
  * preview can tell the user exactly what changed before anything is saved.
  */
-function adaptKey(rawKey: string): { key: string; notes: string[] } {
+export function adaptKey(rawKey: string): { key: string; notes: string[] } {
   const notes: string[] = [];
   let key = rawKey.trim();
 
@@ -169,6 +169,78 @@ function findClosingQuote(text: string, quote: string): number {
   return -1;
 }
 
+/**
+ * Validate + adapt a raw key on its own, without needing a whole file around
+ * it. Used both by parseEnvFile (one line at a time) and by the editable
+ * import preview (one row at a time, as the user types), so a key typed by
+ * hand is held to exactly the same bar as one that came from a file.
+ */
+export function validateEnvKey(rawKey: string): { key: string; notes: string[]; valid: boolean } {
+  const { key, notes } = adaptKey(rawKey);
+  return { key, notes, valid: key !== '' && VALID_KEY.test(key) };
+}
+
+/**
+ * Build one entry from a raw key/value pair — the single-line counterpart to
+ * parseEnvFile, reused so a manually-added or hand-edited row in the import
+ * preview is validated identically to one parsed from a file.
+ */
+export function buildEnvEntry(rawKey: string, value: string, line = 0): ParsedEnvEntry {
+  const { key, notes, valid } = validateEnvKey(rawKey);
+
+  if (!valid) {
+    return {
+      key,
+      originalKey: rawKey.trim(),
+      value,
+      line,
+      status: 'invalid',
+      notes: [key === '' ? 'key is empty' : `"${rawKey.trim()}" cannot be converted to a valid key`],
+      sensitive: false,
+    };
+  }
+
+  return {
+    key,
+    originalKey: rawKey.trim(),
+    value,
+    line,
+    status: notes.length > 0 ? 'adapted' : 'ok',
+    notes,
+    sensitive: isSensitiveKey(key),
+  };
+}
+
+const DUPLICATE_NOTE = 'redefined later in the file — this line is ignored';
+
+/**
+ * Recompute which entries are shadowed by a later definition of the same
+ * key (dotenv semantics: last one wins) and mark them 'duplicate'. Pure and
+ * idempotent — safe to re-run after every edit in the import preview, not
+ * just once at parse time, since editing a row's key can create or resolve
+ * a collision with another staged row.
+ */
+export function markDuplicates(entries: ParsedEnvEntry[]): ParsedEnvEntry[] {
+  const lastIndexByKey = new Map<string, number>();
+  entries.forEach((entry, index) => {
+    if (entry.status === 'invalid') return;
+    lastIndexByKey.set(entry.key, index);
+  });
+
+  return entries.map((entry, index) => {
+    if (entry.status === 'invalid') return entry;
+
+    const baseNotes = entry.notes.filter((note) => note !== DUPLICATE_NOTE);
+    const shadowed = lastIndexByKey.get(entry.key) !== index;
+
+    return {
+      ...entry,
+      status: shadowed ? 'duplicate' : baseNotes.length > 0 ? 'adapted' : 'ok',
+      notes: shadowed ? [...baseNotes, DUPLICATE_NOTE] : baseNotes,
+    };
+  });
+}
+
 export function parseEnvFile(input: string): ParsedEnvFile {
   const lines = input.replace(/^﻿/, '').split(/\r?\n/);
   const entries: ParsedEnvEntry[] = [];
@@ -200,54 +272,20 @@ export function parseEnvFile(input: string): ParsedEnvFile {
     const { value, endIndex } = readValue(withoutExport.slice(separator + 1), lines, i);
     i = endIndex;
 
-    const { key, notes } = adaptKey(originalKey);
-
-    if (key === '' || !VALID_KEY.test(key)) {
-      entries.push({
-        key,
-        originalKey: originalKey.trim(),
-        value,
-        line: startLine,
-        status: 'invalid',
-        notes: [key === '' ? 'key is empty' : `"${originalKey.trim()}" cannot be converted to a valid key`],
-        sensitive: false,
-      });
-      continue;
-    }
-
-    entries.push({
-      key,
-      originalKey: originalKey.trim(),
-      value,
-      line: startLine,
-      status: notes.length > 0 ? 'adapted' : 'ok',
-      notes,
-      sensitive: isSensitiveKey(key),
-    });
+    entries.push(buildEnvEntry(originalKey, value, startLine));
   }
 
-  // dotenv semantics: a later definition of the same key wins. Mark the earlier
-  // ones so the user can see the file redefined something.
-  const lastIndexByKey = new Map<string, number>();
-  entries.forEach((entry, index) => {
-    if (entry.status === 'invalid') return;
-    lastIndexByKey.set(entry.key, index);
-  });
-  entries.forEach((entry, index) => {
-    if (entry.status === 'invalid') return;
-    if (lastIndexByKey.get(entry.key) !== index) {
-      entry.status = 'duplicate';
-      entry.notes = [...entry.notes, 'redefined later in the file — this line is ignored'];
-    }
-  });
+  // dotenv semantics: a later definition of the same key wins. Mark the
+  // earlier ones so the user can see the file redefined something.
+  const deduped = markDuplicates(entries);
 
-  const importable = entries.filter((entry) => entry.status === 'ok' || entry.status === 'adapted');
+  const importable = deduped.filter((entry) => entry.status === 'ok' || entry.status === 'adapted');
   const counts: Record<EnvEntryStatus, number> = { ok: 0, adapted: 0, duplicate: 0, invalid: 0 };
-  entries.forEach((entry) => {
+  deduped.forEach((entry) => {
     counts[entry.status] += 1;
   });
 
-  return { entries, importable, counts };
+  return { entries: deduped, importable, counts };
 }
 
 export function chunk<T>(items: T[], size: number): T[][] {

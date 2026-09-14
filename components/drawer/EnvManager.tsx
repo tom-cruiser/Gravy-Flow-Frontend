@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, FileUp, Plus, RefreshCcw, Trash2, Upload, X } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff, FileUp, Plus, RefreshCcw, Trash2, Upload, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import {
   ENV_FILE_MAX_BYTES,
+  buildEnvEntry,
   chunk,
+  markDuplicates,
   parseEnvFile,
   previewValue,
   type EnvEntryStatus,

@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Activity, Database, ChevronLeft, Shield } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Activity, Check, Copy, Database, ChevronLeft, ExternalLink, Shield } from 'lucide-react';
 import { useCanvasStore, type DrawerTab } from '@/store/canvasStore';
 import { EnvManager } from './EnvManager';
 import { LogViewer } from './LogViewer';
@@ -28,6 +28,19 @@ export function RightDrawer({ open }: RightDrawerProps) {
   );
 
   const heading = useMemo(() => selectedNode?.name ?? 'Select a service', [selectedNode]);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    if (!selectedNode?.url) return;
+    try {
+      await navigator.clipboard.writeText(selectedNode.url);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 1500);
+    } catch {
+      // Clipboard access can be denied (permissions, insecure context); the
+      // link is still visible and clickable, so this is a silent no-op.
+    }
+  };
 
   return (
     <aside
@@ -43,6 +56,28 @@ export function RightDrawer({ open }: RightDrawerProps) {
             <p className="mt-1 text-xs text-zinc-500">
               {selectedNode ? `${selectedNode.type.toUpperCase()} • ${selectedNode.status}` : 'No node selected'}
             </p>
+            {selectedNode?.url ? (
+              <div className="mt-2 flex items-center gap-1.5">
+                <a
+                  href={selectedNode.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-w-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-300 transition hover:border-emerald-500/50 hover:bg-emerald-500/15"
+                >
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  <span className="min-w-0 truncate font-mono">{selectedNode.url.replace(/^https?:\/\//, '')}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopyUrl}
+                  className="shrink-0 rounded-full border border-brand-700 bg-brand-800 p-1.5 text-zinc-400 transition hover:border-brand-600 hover:text-zinc-100"
+                  aria-label="Copy URL"
+                  title="Copy URL"
+                >
+                  {urlCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                </button>
+              </div>
+            ) : null}
           </div>
           <button
             type="button"

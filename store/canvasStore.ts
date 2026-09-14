@@ -18,6 +18,8 @@ export type CanvasNode = {
   repo: string;
   jobId?: string | null;
   statusMessage?: string;
+  /** Where the deployed app is actually reachable. Empty until it has a running container. */
+  url?: string;
 };
 
 // Types matching Go backend shapes (cmd/api/db.go)
@@ -35,6 +37,8 @@ export type DeploymentRecordDTO = {
   StatusMessage: string;
   CreatedAt: string | null;
   UpdatedAt: string | null;
+  /** "" until the deployment has a running container — see computeDeploymentURL (cmd/api/db.go). */
+  URL?: string;
 };
 
 export type AppRecordDTO = {
@@ -44,6 +48,7 @@ export type AppRecordDTO = {
   status?: string;
   statusMessage?: string;
   portMap?: string;
+  url?: string;
   layout?: { x?: number; y?: number } | null;
 };
 
@@ -67,6 +72,7 @@ type CanvasStore = {
   closeNodePanel: () => void;
   setCanvasTransform: (transform: CanvasTransform) => void;
   addNode: (node: CanvasNode) => void;
+  removeNode: (id: string) => void;
   updateNodePosition: (id: string, x: number, y: number) => void;
   markNodeDeployQueued: (id: string, jobId: string | null) => void;
   loadNodes: () => Promise<void>;
@@ -105,6 +111,7 @@ function mapDeploymentToCanvasNode(item: DeploymentRecordDTO, idx: number): Canv
     internalPort: parseContainerPort(item.PortMap),
     repo: item.SourceRepoURL || '',
     statusMessage: item.StatusMessage || '',
+    url: item.URL || undefined,
   };
 }
 
@@ -121,6 +128,7 @@ function mapAppToCanvasNode(item: AppRecordDTO, idx: number): CanvasNode {
     internalPort: parseContainerPort(item.portMap ?? undefined),
     repo: item.repo ?? '',
     statusMessage: item.statusMessage || '',
+    url: item.url || undefined,
   };
 }
 
@@ -144,6 +152,13 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   addNode: (node) =>
     set((state) => ({
       nodes: [...state.nodes, node],
+    })),
+  removeNode: (id) =>
+    set((state) => ({
+      nodes: state.nodes.filter((node) => node.id !== id),
+      // Deleting the node that's currently open in the drawer would
+      // otherwise leave the drawer showing a service that no longer exists.
+      selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
     })),
   updateNodePosition: (id, x, y) =>
     set((state) => ({

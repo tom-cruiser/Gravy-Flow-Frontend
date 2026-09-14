@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react';
-import { AlertTriangle, Database, Globe2, LoaderCircle } from 'lucide-react';
+import { AlertTriangle, Database, ExternalLink, Globe2, LoaderCircle } from 'lucide-react';
 import type { CanvasNode } from '@/store/canvasStore';
 
 const statusStyles: Record<CanvasNode['status'], string> = {
@@ -84,11 +84,29 @@ export function ServiceNode({ node, selected, onPointerDown }: ServiceNodeProps)
 
       {/* Infrastructure Specs Grid block */}
       <div className="mt-4 space-y-2.5 text-xs">
+        {node.url ? (
+          <a
+            href={node.url}
+            target="_blank"
+            rel="noreferrer"
+            // Stops the click from also registering as a card click/drag on
+            // the parent (which selects the node and opens the drawer) —
+            // this link should just navigate.
+            onPointerDown={(event) => event.stopPropagation()}
+            className="flex items-center gap-2 rounded-gf border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-emerald-300 transition hover:border-emerald-500/50 hover:bg-emerald-500/15"
+          >
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate font-mono text-xs" title={node.url}>
+              {node.url.replace(/^https?:\/\//, '')}
+            </span>
+          </a>
+        ) : null}
+
         <div className="rounded-gf border border-brand-700/60 bg-brand-900/40 p-2.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">Repository target</p>
           <p className="mt-1 truncate font-mono text-xs text-zinc-300" title={node.repo}>{node.repo}</p>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2.5">
           <div className="rounded-gf border border-brand-700/60 bg-brand-900/40 p-2.5">
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">CPU allocation</p>

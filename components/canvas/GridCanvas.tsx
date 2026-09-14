@@ -1,6 +1,6 @@
 'use client';
 
-import type { PointerEvent as ReactPointerEvent, WheelEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCanvasStore } from '@/store/canvasStore';
 import { NetworkLine } from './NetworkLine';
@@ -130,13 +130,15 @@ export function GridCanvas() {
         if (dragState.mode === 'node') {
           const moved = Math.hypot(event.clientX - dragState.originX, event.clientY - dragState.originY);
           if (moved <= CLICK_DRAG_THRESHOLD_PX) {
-            const node = nodes.find((entry) => entry.id === dragState.id);
-            const tab =
-              node?.status === 'BUILDING' || node?.status === 'FAILED'
-                ? 'logs'
-                : selectedNodeId === dragState.id
-                  ? drawerTab
-                  : 'logs';
+            // Default to the Logs tab the first time a node is opened
+            // (useful for watching a build), but never force it back there
+            // on a re-click of the SAME node — a BUILDING/FAILED node used
+            // to always snap back to Logs even if the Env tab was already
+            // open, which made it look like env vars couldn't be managed
+            // while a deployment was still building (they always could;
+            // POST /apps/:id/env has no status gate — this was purely the
+            // drawer stealing focus back).
+            const tab = selectedNodeId === dragState.id ? drawerTab : 'logs';
             openNodePanel(dragState.id, tab);
           }
         }
@@ -189,31 +191,57 @@ export function GridCanvas() {
     });
   };
 
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
+  // React (since v17) attaches onWheel as a passive DOM listener, so
+  // event.preventDefault() inside a JSX onWheel handler is a silent no-op —
+  // it logs "Unable to preventDefault inside passive event listener" and
+  // never actually stops the page from scrolling under the canvas. Zooming
+  // needs to suppress that native scroll, so the listener is attached by
+  // hand with { passive: false } instead. Refs mirror the latest
+  // viewport/scale so the listener (added once) always zooms around the
+  // current view rather than a stale snapshot from mount.
+  const viewportRef = useRef(viewport);
+  const scaleRef = useRef(scale);
+
+  useEffect(() => {
+    viewportRef.current = viewport;
+  }, [viewport]);
+
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-    
-    const worldX = (pointer.x - viewport.x) / scale;
-    const worldY = (pointer.y - viewport.y) / scale;
-    
-    const nextScale = clamp(scale - event.deltaY * 0.0015, MIN_SCALE, MAX_SCALE);
+    const onWheel = (event: globalThis.WheelEvent) => {
+      event.preventDefault();
 
-    setScale(nextScale);
-    setViewport({
-      x: pointer.x - worldX * nextScale,
-      y: pointer.y - worldY * nextScale,
-    });
-  };
+      const rect = canvas.getBoundingClientRect();
+      const pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+
+      const currentViewport = viewportRef.current;
+      const currentScale = scaleRef.current;
+      const worldX = (pointer.x - currentViewport.x) / currentScale;
+      const worldY = (pointer.y - currentViewport.y) / currentScale;
+
+      const nextScale = clamp(currentScale - event.deltaY * 0.0015, MIN_SCALE, MAX_SCALE);
+
+      setScale(nextScale);
+      setViewport({
+        x: pointer.x - worldX * nextScale,
+        y: pointer.y - worldY * nextScale,
+      });
+    };
+
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <div
       ref={canvasRef}
       onPointerDown={handleCanvasPointerDown}
-      onWheel={handleWheel}
       className="relative h-screen w-screen overflow-hidden bg-brand-950 text-zinc-100 select-none touch-none"
     >
       {/* Dynamic Background Grid: 
