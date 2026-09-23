@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, Cpu, Database, HardDrive, MemoryStick } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Cpu, Database, HardDrive, Loader2, MemoryStick, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuditLogsQuery, useClusterOverviewQuery, useRiskAlertsQuery } from '@/lib/adminQueries';
+import { useAuditLogsQuery, useClusterOverviewQuery, useDeploymentsQuery, useRiskAlertsQuery } from '@/lib/adminQueries';
+import { deploymentStatusBucket } from '@/lib/deploymentStatus';
 
 function formatBytes(bytes: number) {
   if (!bytes) return '0 B';
@@ -13,20 +14,29 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
 }
 
+const TONE_CLASSES = {
+  brand: 'border-brand-700/60 bg-brand-800/60 text-brand-300',
+  success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+  warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+  destructive: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+} as const;
+
 function StatTile({
   icon: Icon,
   label,
   value,
   hint,
+  tone = 'brand',
 }: {
   icon: typeof Cpu;
   label: string;
   value: string;
   hint?: string;
+  tone?: keyof typeof TONE_CLASSES;
 }) {
   return (
     <Card className="flex items-start gap-4">
-      <div className="rounded-gf border border-brand-700/60 bg-brand-800/60 p-2.5 text-brand-300">
+      <div className={`rounded-gf border p-2.5 ${TONE_CLASSES[tone]}`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
@@ -42,6 +52,16 @@ export default function AdminOverviewPage() {
   const cluster = useClusterOverviewQuery();
   const riskAlerts = useRiskAlertsQuery('open');
   const auditLogs = useAuditLogsQuery({ page: 1, perPage: 8 });
+  // Capped at the backend's max perPage (see adminListDeploymentsHandler) —
+  // on a fleet larger than 200 deployments these tiles undercount. There's
+  // no cluster-wide status-breakdown endpoint yet, so this is the real data
+  // available without inventing numbers.
+  const deployments = useDeploymentsQuery('', 1, 200);
+
+  const statusCounts = { running: 0, inProgress: 0, notRunning: 0 };
+  for (const d of deployments.data?.items ?? []) {
+    statusCounts[deploymentStatusBucket(d.Status)] += 1;
+  }
 
   return (
     <div className="space-y-8">
@@ -76,6 +96,35 @@ export default function AdminOverviewPage() {
       ) : (
         <p className="text-sm text-rose-300">Failed to load cluster overview.</p>
       )}
+
+      {deployments.isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+      ) : deployments.data ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatTile
+            icon={CheckCircle2}
+            label="Running"
+            value={String(statusCounts.running)}
+            tone="success"
+          />
+          <StatTile
+            icon={Loader2}
+            label="Building / deploying"
+            value={String(statusCounts.inProgress)}
+            tone="warning"
+          />
+          <StatTile
+            icon={XCircle}
+            label="Stopped / failed"
+            value={String(statusCounts.notRunning)}
+            tone="destructive"
+          />
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>

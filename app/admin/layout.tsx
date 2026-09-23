@@ -5,27 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Activity,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  LayoutDashboard,
-  ShieldCheck,
-  Server,
-  Users,
-} from 'lucide-react';
+import { Activity, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { AdminRoute } from '@/components/auth/AdminRoute';
-
-const NAV_ITEMS = [
-  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/infrastructure', label: 'Infrastructure', icon: Server },
-  { href: '/admin/abuse', label: 'Abuse & Risk', icon: AlertTriangle },
-  { href: '/admin/audit-logs', label: 'Audit Log', icon: ClipboardList },
-];
+import { AdminTopBar } from '@/components/admin/AdminTopBar';
+import { ADMIN_NAV_ITEMS } from '@/lib/adminNav';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -69,7 +53,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
 
             <nav className="flex-1 space-y-1 p-3">
-              {NAV_ITEMS.map((item) => {
+              {ADMIN_NAV_ITEMS.map((item) => {
                 const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
                 const Icon = item.icon;
                 return (
@@ -115,7 +99,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>
+          <main className="min-w-0 flex-1 overflow-x-hidden">
+            <AdminTopBar />
+            <div className="p-6 lg:p-8">{children}</div>
+          </main>
         </div>
       </QueryClientProvider>
     </AdminRoute>

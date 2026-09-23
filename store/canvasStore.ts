@@ -5,7 +5,7 @@ import { parseContainerPort } from '@/lib/portMap';
 
 export type NodeType = 'web' | 'db';
 export type NodeStatus = 'RUNNING' | 'BUILDING' | 'FAILED';
-export type DrawerTab = 'logs' | 'env' | 'networking';
+export type DrawerTab = 'logs' | 'env' | 'networking' | 'source';
 
 export type CanvasNode = {
   id: string;

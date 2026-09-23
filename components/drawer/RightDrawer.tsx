@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, Check, Copy, Database, ChevronLeft, ExternalLink, Shield } from 'lucide-react';
+import { Activity, Check, Copy, Database, ChevronLeft, ExternalLink, GitBranch, Shield } from 'lucide-react';
 import { useCanvasStore, type DrawerTab } from '@/store/canvasStore';
 import { EnvManager } from './EnvManager';
 import { LogViewer } from './LogViewer';
 import { DomainManager } from './DomainManager';
+import { RepoAccess } from './RepoAccess';
 import { ServiceActionBar } from './ServiceActionBar';
 
 type RightDrawerProps = {
@@ -16,6 +17,7 @@ const tabs: Array<{ id: DrawerTab; label: string; icon: typeof Activity }> = [
   { id: 'logs', label: 'Logs', icon: Activity },
   { id: 'env', label: 'Env', icon: Database },
   { id: 'networking', label: 'Domains', icon: Shield },
+  { id: 'source', label: 'Source', icon: GitBranch },
 ];
 
 export function RightDrawer({ open }: RightDrawerProps) {
@@ -139,6 +141,11 @@ export function RightDrawer({ open }: RightDrawerProps) {
             {drawerTab === 'networking' ? (
               <div className="h-full">
                 <DomainManager deploymentId={selectedNodeId} />
+              </div>
+            ) : null}
+            {drawerTab === 'source' ? (
+              <div className="h-full overflow-auto">
+                <RepoAccess deploymentId={selectedNodeId} repo={selectedNode?.repo ?? null} />
               </div>
             ) : null}
           </div>

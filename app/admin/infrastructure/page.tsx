@@ -17,14 +17,17 @@ import {
   usePurgeDeploymentCacheMutation,
   useRestartDeploymentMutation,
 } from '@/lib/adminQueries';
+import { deploymentStatusLabel, deploymentStatusVariant } from '@/lib/deploymentStatus';
 
-const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'destructive' | 'default'> = {
-  running: 'success',
-  building: 'warning',
-  deploying: 'warning',
-  stopped: 'default',
-  failed: 'destructive',
-};
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.round(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  return `${Math.round(diffHr / 24)}d ago`;
+}
 
 function EnvInspectorDialog({ deploymentId, onClose }: { deploymentId: string | null; onClose: () => void }) {
   const env = useDeploymentEnvQuery(deploymentId);
@@ -125,6 +128,7 @@ export default function AdminInfrastructurePage() {
                 <TableHead>Service</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Last updated</TableHead>
                 <TableHead className="w-56">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -137,8 +141,9 @@ export default function AdminInfrastructurePage() {
                   </TableCell>
                   <TableCell className="text-zinc-400">{d.ownerEmail}</TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_VARIANT[d.Status] ?? 'default'}>{d.Status}</Badge>
+                    <Badge variant={deploymentStatusVariant(d.Status)}>{deploymentStatusLabel(d.Status)}</Badge>
                   </TableCell>
+                  <TableCell className="text-xs text-zinc-500">{relativeTime(d.UpdatedAt)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1.5">
                       <Button
@@ -182,7 +187,7 @@ export default function AdminInfrastructurePage() {
               ))}
               {deployments.data?.items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-10 text-center text-zinc-500">
+                  <TableCell colSpan={5} className="py-10 text-center text-zinc-500">
                     No deployments match this search.
                   </TableCell>
                 </TableRow>

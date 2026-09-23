@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { Plus, X, AlertTriangle } from 'lucide-react';
+import { Plus, X, AlertTriangle, Github, Link2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { fetchGitHubInstallations, type GitHubRepo } from '@/lib/githubApi';
+import { GitHubRepoPicker } from '@/components/canvas/GitHubRepoPicker';
 import { useAuthStore } from '@/store/authStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { parseContainerPort } from '@/lib/portMap';
@@ -25,6 +27,13 @@ export function NewServiceButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [serviceName, setServiceName] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
+  const [gitToken, setGitToken] = useState('');
+  // 'github' picks a repository through the GitHub App; 'url' is the manual
+  // URL + optional access token path for other hosts.
+  const [sourceMode, setSourceMode] = useState<'github' | 'url'>('github');
+  const [githubConfigured, setGithubConfigured] = useState<boolean | null>(null);
+  const [hasInstallations, setHasInstallations] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,11 +52,39 @@ export function NewServiceButton() {
     setIsOpen(true);
   };
 
+  // Re-checked on every open, so a GitHub connection made in another tab shows up.
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    fetchGitHubInstallations()
+      .then((data) => {
+        if (!active) return;
+        setGithubConfigured(data.configured);
+        setHasInstallations(data.installations.some((inst) => !inst.suspendedAt));
+        if (!data.configured) setSourceMode('url');
+      })
+      .catch(() => {
+        if (!active) return;
+        setGithubConfigured(false);
+        setSourceMode('url');
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
+
+  const handleSelectRepo = (repo: GitHubRepo) => {
+    setSelectedRepo(repo);
+    setServiceName((current) => current || repo.name.toLowerCase().replace(/[^a-z0-9-]+/g, '-'));
+  };
+
   const closeModal = () => {
     if (isSubmitting) return;
     setIsOpen(false);
     setServiceName('');
     setRepositoryUrl('');
+    setGitToken('');
+    setSelectedRepo(null);
     setErrorMessage(null);
   };
 
@@ -108,15 +145,31 @@ export function NewServiceButton() {
     setErrorMessage(null);
 
     const name = serviceName.trim();
-    const repo = repositoryUrl.trim();
-    if (!name || !repo) {
-      setErrorMessage('Service name and repository URL are required.');
+    const useGitHub = sourceMode === 'github';
+    if (!name) {
+      setErrorMessage('Service name is required.');
+      return;
+    }
+    if (useGitHub && !selectedRepo) {
+      setErrorMessage('Pick a repository to deploy.');
+      return;
+    }
+    if (!useGitHub && !repositoryUrl.trim()) {
+      setErrorMessage('Repository URL is required.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/apps', { name, repo });
+      const token = gitToken.trim();
+      const payload =
+        useGitHub && selectedRepo
+          ? { name, github: { installationId: selectedRepo.installationId, repositoryId: selectedRepo.id } }
+          : token
+            ? { name, repo: repositoryUrl.trim(), gitToken: token }
+            : { name, repo: repositoryUrl.trim() };
+      const response = await api.post('/apps', payload);
+      const repo: string = response.data?.app?.repo ?? (useGitHub && selectedRepo ? selectedRepo.cloneUrl : repositoryUrl.trim());
 
       if (response.status < 200 || response.status >= 300) {
         throw new Error('Provisioning was not accepted by the control plane.');
@@ -143,8 +196,12 @@ export function NewServiceButton() {
       setIsOpen(false);
       setServiceName('');
       setRepositoryUrl('');
+      setGitToken('');
+      setSelectedRepo(null);
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : 'Unable to create service.';
+      const apiError = (submitError as { response?: { data?: { details?: string; error?: string } } })?.response?.data;
+      const message =
+        apiError?.details ?? apiError?.error ?? (submitError instanceof Error ? submitError.message : 'Unable to create service.');
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -172,7 +229,7 @@ export function NewServiceButton() {
         >
           <div 
             ref={modalRef}
-            className="w-full max-w-lg rounded-[1.75rem] border border-brand-700/50 bg-brand-900/95 p-8 text-zinc-100 shadow-panel animate-in fade-in zoom-in-95 duration-200"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[1.75rem] border border-brand-700/50 bg-brand-900/95 p-8 text-zinc-100 shadow-panel animate-in fade-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-service-title"
@@ -223,22 +280,88 @@ export function NewServiceButton() {
                 />
               </div>
 
-              {/* Input Group: Git Repository */}
+              {/* Source selector: GitHub App picker or manual URL */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="repositoryUrl" className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
-                  Git Repository URL
-                </label>
-                <input
-                  id="repositoryUrl"
-                  type="url"
-                  value={repositoryUrl}
-                  // FIXED: Changed event.target.trim() to event.target.value.trim()
-                  onChange={(event) => setRepositoryUrl(event.target.value.trim())}
-                  placeholder="https://github.com/org/repo"
-                  className="gf-input font-normal normal-case tracking-normal"
-                  required
-                />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">Source</span>
+                  {githubConfigured ? (
+                    <div role="tablist" aria-label="Repository source" className="flex rounded-full border border-brand-700 bg-brand-850/60 p-0.5 text-[11px]">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sourceMode === 'github'}
+                        onClick={() => setSourceMode('github')}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors ${
+                          sourceMode === 'github' ? 'bg-brand-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        <Github className="h-3 w-3" /> GitHub
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sourceMode === 'url'}
+                        onClick={() => setSourceMode('url')}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors ${
+                          sourceMode === 'url' ? 'bg-brand-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        <Link2 className="h-3 w-3" /> Git URL
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {githubConfigured === null ? (
+                  <p className="rounded-xl border border-brand-700 bg-brand-850/40 px-3 py-4 text-center text-xs text-zinc-500">Loading sources…</p>
+                ) : sourceMode === 'github' ? (
+                  <GitHubRepoPicker
+                    selected={selectedRepo}
+                    onSelect={handleSelectRepo}
+                    hasInstallations={hasInstallations}
+                    disabled={isSubmitting}
+                  />
+                ) : null}
               </div>
+
+              {sourceMode === 'url' && githubConfigured !== null ? (
+                <>
+                {/* Input Group: Git Repository */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="repositoryUrl" className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
+                    Git Repository URL
+                  </label>
+                  <input
+                    id="repositoryUrl"
+                    type="url"
+                    value={repositoryUrl}
+                      onChange={(event) => setRepositoryUrl(event.target.value.trim())}
+                    placeholder="https://gitlab.com/org/repo"
+                    className="gf-input font-normal normal-case tracking-normal"
+                    required
+                  />
+                </div>
+
+                {/* Input Group: Private repository access token (optional) */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="gitToken" className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
+                    Access Token <span className="normal-case tracking-normal text-zinc-500">(private repos only)</span>
+                  </label>
+                  <input
+                    id="gitToken"
+                    type="password"
+                    autoComplete="off"
+                    value={gitToken}
+                    onChange={(event) => setGitToken(event.target.value)}
+                    placeholder="github_pat_…"
+                    className="gf-input font-normal normal-case tracking-normal"
+                  />
+                  <p className="text-[11px] leading-relaxed text-zinc-500">
+                    A token with read access to the repository. Stored encrypted; you can change it later under Source.
+                  </p>
+                </div>
+                </>
+              ) : null}
 
               {/* Footer Controls Component */}
               <div className="flex items-center justify-end gap-3 pt-3">

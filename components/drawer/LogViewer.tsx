@@ -17,6 +17,26 @@ type LogLine = {
   stream?: 'stdout' | 'stderr' | 'info';
 };
 
+// One build output line, streamed on the same job socket as status updates.
+type JobLogMessageDTO = {
+  type: 'log';
+  seq: number;
+  line: string;
+};
+
+// Cap on lines kept on screen; the backend keeps the same number per job.
+const MAX_LOG_LINES = 2000;
+
+function appendCapped(prev: LogLine[], next: LogLine): LogLine[] {
+  const merged = [...prev, next];
+  return merged.length > MAX_LOG_LINES ? merged.slice(merged.length - MAX_LOG_LINES) : merged;
+}
+
+// "==> …" lines are GravyFlow's own stage headers inside the build log.
+function buildLogLine(text: string): LogLine {
+  return { text, stream: text.startsWith('==>') ? 'info' : 'stdout' };
+}
+
 type DeploymentJobStatusDTO = {
   jobId?: string;
   deploymentId?: string;
@@ -33,7 +53,7 @@ type DeployLogResponse = {
   status?: string;
   statusMessage?: string;
   lastJobId?: string;
-  lines?: Array<{ text?: string; stream?: string }>;
+  lines?: Array<{ text?: string; stream?: string; source?: string }>;
   job?: DeploymentJobStatusDTO;
 };
 
@@ -140,6 +160,10 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
   const [buildProgress, setBuildProgress] = useState(0);
   const logViewportRef = useRef<HTMLDivElement | null>(null);
   const accessToken = useAuthStore((s) => s.accessToken);
+  // After a page reload the node no longer knows its job; the control plane
+  // remembers each deployment's latest job, so look it up.
+  const [discoveredJobId, setDiscoveredJobId] = useState<string | null>(null);
+  const effectiveJobId = jobId ?? discoveredJobId;
 
   const runtimeSocketUrl = useMemo(() => {
     if (!deploymentId || !accessToken) return null;
@@ -147,9 +171,32 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
   }, [deploymentId, accessToken]);
 
   const buildSocketUrl = useMemo(() => {
-    if (!jobId || !accessToken) return null;
-    return buildApiWebSocketUrl(`jobs/${jobId}/stream`, accessToken);
-  }, [accessToken, jobId]);
+    if (!effectiveJobId || !accessToken) return null;
+    return buildApiWebSocketUrl(`jobs/${effectiveJobId}/stream`, accessToken);
+  }, [accessToken, effectiveJobId]);
+
+  useEffect(() => {
+    setDiscoveredJobId(null);
+  }, [deploymentId]);
+
+  useEffect(() => {
+    if (phase !== 'build' || jobId || discoveredJobId || !deploymentId) return;
+
+    let cancelled = false;
+    api
+      .get<DeployLogResponse>(`/apps/${deploymentId}/deploy-log`, { params: { limit: 1 } })
+      .then((response) => {
+        const found = response.data?.job?.jobId;
+        if (!cancelled && found) setDiscoveredJobId(found);
+      })
+      .catch(() => {
+        // Keep showing "waiting for build job stream"; the poll will retry.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deploymentId, discoveredJobId, jobId, phase]);
 
   // Reset when the selected deployment changes.
   useEffect(() => {
@@ -218,7 +265,9 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
         }
 
         for (const line of data.lines ?? []) {
-          if (line.text) {
+          if (line.text && line.source === 'build') {
+            nextLines.push(buildLogLine(line.text));
+          } else if (line.text) {
             nextLines.push({
               text: line.text.startsWith('[') ? line.text : `[error] ${line.text}`,
               stream: line.stream === 'stdout' ? 'stdout' : 'stderr',
@@ -266,7 +315,7 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
     return () => {
       cancelled = true;
     };
-  }, [deploymentId, nodeStatus, phase, statusMessage]);
+  }, [deploymentId, jobId, nodeStatus, phase, statusMessage]);
 
   // Build progress stream (deployment job updates).
   useEffect(() => {
@@ -275,7 +324,7 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
     let disposed = false;
     const socket = new WebSocket(buildSocketUrl);
 
-    const append = (line: LogLine) => setLines((prev) => [...prev, line]);
+    const append = (line: LogLine) => setLines((prev) => appendCapped(prev, line));
 
     setLines([{ text: `[build] streaming deployment progress for ${deploymentId?.slice(0, 8)}…`, stream: 'info' }]);
     setStatus('connecting');
@@ -291,9 +340,19 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
 
       const raw = typeof event.data === 'string' ? event.data : '';
       try {
-        const parsed = JSON.parse(raw) as DeploymentJobStatusDTO;
-        const line = formatJobStatusLine(parsed);
-        append(line);
+        const message = JSON.parse(raw) as DeploymentJobStatusDTO | JobLogMessageDTO;
+
+        if ('type' in message && message.type === 'log') {
+          append(buildLogLine(message.line));
+          return;
+        }
+
+        const parsed = message as DeploymentJobStatusDTO;
+        // Stage changes of a running job already appear in the build log as
+        // "==>" lines; only surface the status itself when it's not that.
+        if (parsed.status !== 'active') {
+          append(formatJobStatusLine(parsed));
+        }
 
         if (typeof parsed.progress === 'number') {
           setBuildProgress(parsed.progress);

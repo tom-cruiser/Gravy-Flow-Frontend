@@ -83,10 +83,10 @@ export function useClusterOverviewQuery() {
   });
 }
 
-export function useDeploymentsQuery(search: string, page: number) {
+export function useDeploymentsQuery(search: string, page: number, perPage = 25) {
   return useQuery({
-    queryKey: ['admin', 'deployments', search, page],
-    queryFn: () => adminApi.listDeployments(search, page),
+    queryKey: ['admin', 'deployments', search, page, perPage],
+    queryFn: () => adminApi.listDeployments(search, page, perPage),
     placeholderData: (prev) => prev,
   });
 }
