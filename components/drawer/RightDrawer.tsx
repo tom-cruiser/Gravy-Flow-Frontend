@@ -134,12 +134,16 @@ export function RightDrawer({ open }: RightDrawerProps) {
               />
             </div>
             {drawerTab === 'env' ? (
-              <div className="h-full">
-                <EnvManager deploymentId={selectedNodeId} serviceName={selectedNode?.name ?? null} />
+              <div className="h-full overflow-auto">
+                <EnvManager
+                  deploymentId={selectedNodeId}
+                  serviceName={selectedNode?.name ?? null}
+                  nodeStatus={selectedNode?.status ?? null}
+                />
               </div>
             ) : null}
             {drawerTab === 'networking' ? (
-              <div className="h-full">
+              <div className="h-full overflow-auto">
                 <DomainManager deploymentId={selectedNodeId} />
               </div>
             ) : null}

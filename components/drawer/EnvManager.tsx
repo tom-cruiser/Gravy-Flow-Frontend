@@ -11,9 +11,11 @@ import {
   chunk,
   markDuplicates,
   parseEnvFile,
+  validateEnvKey,
   type EnvEntryStatus,
   type ParsedEnvEntry,
 } from '@/lib/envFile';
+import type { NodeStatus } from '@/store/canvasStore';
 
 type EnvItem = {
   key: string;
@@ -23,6 +25,7 @@ type EnvItem = {
 type EnvManagerProps = {
   deploymentId: string | null;
   serviceName?: string | null;
+  nodeStatus?: NodeStatus | null;
 };
 
 type EnvListResponse = {
@@ -89,14 +92,17 @@ const statusStyles: Record<EnvEntryStatus, { label: string; className: string }>
 
 function describeError(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
-    const data = (error as { response?: { data?: { error?: string; details?: string } } }).response?.data;
+    const data = (error as {
+      response?: { data?: { error?: string; details?: string; validation?: { errors?: string[] } } };
+    }).response?.data;
+    if (data?.validation?.errors?.length) return data.validation.errors.join(' ');
     if (data?.details) return data.details;
     if (data?.error) return data.error;
   }
   return error instanceof Error ? error.message : fallback;
 }
 
-export function EnvManager({ deploymentId, serviceName }: EnvManagerProps) {
+export function EnvManager({ deploymentId, serviceName, nodeStatus }: EnvManagerProps) {
   const markNodeDeployQueued = useCanvasStore((state) => state.markNodeDeployQueued);
   const setDrawerTab = useCanvasStore((state) => state.setDrawerTab);
 
@@ -288,10 +294,19 @@ export function EnvManager({ deploymentId, serviceName }: EnvManagerProps) {
   const handleAddRow = async () => {
     if (!deploymentId) return;
 
-    const key = draftKey.trim();
+    const rawKey = draftKey.trim();
     const value = draftValue.trim();
-    if (!key || !value) {
+    if (!rawKey || !value) {
       setErrorMessage('A key and value are required before saving.');
+      return;
+    }
+
+    // Mirror the Import .env path: fold dashes/dots/spaces to underscores,
+    // strip anything else invalid, and uppercase — instead of sending the
+    // raw text and letting the backend reject it outright.
+    const { key, valid } = validateEnvKey(rawKey);
+    if (!valid) {
+      setErrorMessage(`"${rawKey}" can't be turned into a valid key — use letters, digits, and underscores.`);
       return;
     }
 
@@ -333,6 +348,12 @@ export function EnvManager({ deploymentId, serviceName }: EnvManagerProps) {
     }
   };
 
+  // A service that never finished its first build (or whose deployment is
+  // stuck FAILED with no running container) has nothing to "restart" — the
+  // /restart endpoint's guard rejects it indefinitely. Route those cases
+  // through /deploy instead, exactly like ServiceActionBar's isRedeploy check.
+  const needsRedeploy = nodeStatus !== 'RUNNING';
+
   const handleRestartAndApply = async () => {
     if (!deploymentId) return;
 
@@ -341,11 +362,18 @@ export function EnvManager({ deploymentId, serviceName }: EnvManagerProps) {
     setSuccessMessage(null);
 
     try {
-      await api.post(`/apps/${deploymentId}/restart`);
-      setSuccessMessage('✓ Service restarted successfully');
+      const endpoint = needsRedeploy ? `/apps/${deploymentId}/deploy` : `/apps/${deploymentId}/restart`;
+      const response = await api.post<DeployResponse>(endpoint);
+      if (needsRedeploy) {
+        markNodeDeployQueued(deploymentId, response.data?.jobId ?? null);
+        setDrawerTab('logs');
+        setSuccessMessage('✓ Redeploy queued — watch the Logs tab for progress.');
+      } else {
+        setSuccessMessage('✓ Service restarted successfully');
+      }
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      setErrorMessage(describeError(error, 'Failed to restart service.'));
+      setErrorMessage(describeError(error, needsRedeploy ? 'Failed to queue redeploy.' : 'Failed to restart service.'));
     } finally {
       setRestarting(false);
     }
@@ -609,7 +637,9 @@ export function EnvManager({ deploymentId, serviceName }: EnvManagerProps) {
           className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-brand-200 transition hover:bg-accent/15 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCcw className={`h-3.5 w-3.5 ${restarting ? 'animate-spin' : ''}`} />
-          {restarting ? 'Restarting…' : 'Restart & Apply Changes'}
+          {restarting
+            ? needsRedeploy ? 'Queuing redeploy…' : 'Restarting…'
+            : needsRedeploy ? 'Redeploy & Apply Changes' : 'Restart & Apply Changes'}
         </button>
       </div>
 
