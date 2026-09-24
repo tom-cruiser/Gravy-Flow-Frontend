@@ -1,4 +1,5 @@
 import {
+  Activity,
   AlertTriangle,
   ClipboardList,
   LayoutDashboard,
@@ -20,6 +21,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/infrastructure', label: 'Infrastructure', icon: Server },
+  { href: '/admin/system-health', label: 'System Health', icon: Activity },
   { href: '/admin/abuse', label: 'Abuse & Risk', icon: AlertTriangle },
   { href: '/admin/audit-logs', label: 'Audit Log', icon: ClipboardList },
 ];

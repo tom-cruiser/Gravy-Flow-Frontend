@@ -7,6 +7,7 @@ import { EnvManager } from './EnvManager';
 import { LogViewer } from './LogViewer';
 import { DomainManager } from './DomainManager';
 import { RepoAccess } from './RepoAccess';
+import { BuildSettings } from './BuildSettings';
 import { ServiceActionBar } from './ServiceActionBar';
 
 type RightDrawerProps = {
@@ -150,6 +151,7 @@ export function RightDrawer({ open }: RightDrawerProps) {
             {drawerTab === 'source' ? (
               <div className="h-full overflow-auto">
                 <RepoAccess deploymentId={selectedNodeId} repo={selectedNode?.repo ?? null} />
+                <BuildSettings deploymentId={selectedNodeId} />
               </div>
             ) : null}
           </div>

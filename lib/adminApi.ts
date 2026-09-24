@@ -347,3 +347,56 @@ export function disableMFA(currentPassword: string) {
 export function regenerateRecoveryCodes() {
   return api.post<{ codes: string[] }>('/profile/mfa/recovery-codes/regenerate').then((r) => r.data);
 }
+
+// ---------------------------------------------------------------------------
+// System health (admin_system.go)
+// ---------------------------------------------------------------------------
+
+export type ComponentStatus = 'healthy' | 'degraded' | 'unhealthy' | 'not_configured';
+
+export type ComponentHealth = {
+  name: string;
+  status: ComponentStatus;
+  latencyMs: number;
+  error?: string;
+  details?: Record<string, unknown>;
+};
+
+export type SystemHealthReport = {
+  status: Exclude<ComponentStatus, 'not_configured'>;
+  checkedAt: string;
+  components: ComponentHealth[];
+  process: {
+    pid: number;
+    goVersion: string;
+    version: string;
+    startedAt: string;
+    uptimeSeconds: number;
+    goroutines: number;
+    heapAllocBytes: number;
+    heapSysBytes: number;
+    sysBytes: number;
+    numGc: number;
+    lastGcPauseUs: number;
+  };
+  host: {
+    hostname: string;
+    os: string;
+    kernel: string;
+    arch: string;
+    cpuCount: number;
+    cpuUsagePercent?: number;
+    loadAverage?: number[];
+    memoryTotalBytes: number;
+    memoryAvailableBytes: number;
+    diskPath: string;
+    diskTotalBytes: number;
+    diskFreeBytes: number;
+    uptimeSeconds: number;
+    containerized: boolean;
+  };
+};
+
+export function getSystemHealth() {
+  return api.get<SystemHealthReport>('/admin/system/health').then((r) => r.data);
+}

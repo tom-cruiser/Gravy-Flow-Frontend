@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Copy } from 'lucide-react';
 import type { NodeStatus } from '@/store/canvasStore';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -159,6 +160,7 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
   const [phase, setPhase] = useState<LogPhase>('idle');
   const [buildProgress, setBuildProgress] = useState(0);
   const logViewportRef = useRef<HTMLDivElement | null>(null);
+  const [copied, setCopied] = useState(false);
   const accessToken = useAuthStore((s) => s.accessToken);
   // After a page reload the node no longer knows its job; the control plane
   // remembers each deployment's latest job, so look it up.
@@ -524,6 +526,18 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
   const heading =
     phase === 'failure' ? 'Deploy Failed' : phase === 'build' ? 'Build Logs' : 'Runtime Logs';
   const badge = phase === 'failure' ? 'FAILED' : phase === 'build' ? 'JOB' : 'WS';
+  const hasLogs = lines.length > 0 && lines !== idleLines;
+
+  const handleCopyLogs = async () => {
+    try {
+      await navigator.clipboard.writeText(lines.map((line) => line.text).join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard access can be denied (permissions, insecure context) — the
+      // logs are still visible and selectable, so this is a silent no-op.
+    }
+  };
 
   return (
     <div className="flex h-full flex-col rounded-gf-2xl border border-brand-700/50 bg-brand-950/95 shadow-glow">
@@ -535,6 +549,16 @@ export function LogViewer({ deploymentId, jobId, statusMessage, nodeStatus }: Lo
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyLogs}
+            disabled={!hasLogs}
+            className="rounded-full border border-brand-700 bg-brand-800 p-1.5 text-zinc-400 transition hover:border-brand-600 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Copy logs"
+            title="Copy logs"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
           <span className={`h-2 w-2 rounded-full ${statusDot}`} />
           <span className="rounded-full border border-brand-600 bg-brand-800 px-2.5 py-1 text-[11px] font-medium text-brand-200">
             {badge}

@@ -26,6 +26,10 @@ function worldPointFromScreen(screenX: number, screenY: number, viewportX: numbe
 export function NewServiceButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [serviceName, setServiceName] = useState('');
+  // Optional monorepo settings (see BuildSettings.tsx): the first build runs
+  // as soon as the service is created, so they have to be known up front.
+  const [dockerfilePath, setDockerfilePath] = useState('');
+  const [containerPort, setContainerPort] = useState('');
   // New services can only be created by picking a repository through the
   // GitHub App — there is no manual URL/token fallback (see createAppHandler,
   // main.go, which now rejects a request without a `github` selection).
@@ -78,6 +82,8 @@ export function NewServiceButton() {
     if (isSubmitting) return;
     setIsOpen(false);
     setServiceName('');
+    setDockerfilePath('');
+    setContainerPort('');
     setSelectedRepo(null);
     setErrorMessage(null);
   };
@@ -150,7 +156,18 @@ export function NewServiceButton() {
 
     setIsSubmitting(true);
     try {
-      const payload = { name, github: { installationId: selectedRepo.installationId, repositoryId: selectedRepo.id } };
+      const port = containerPort.trim() === '' ? 0 : Number(containerPort);
+      if (!Number.isInteger(port) || port < 0 || port > 65535) {
+        setErrorMessage('Container port must be between 1 and 65535.');
+        setIsSubmitting(false);
+        return;
+      }
+      const payload = {
+        name,
+        github: { installationId: selectedRepo.installationId, repositoryId: selectedRepo.id },
+        ...(dockerfilePath.trim() ? { dockerfilePath: dockerfilePath.trim() } : {}),
+        ...(port > 0 ? { containerPort: port } : {}),
+      };
       const response = await api.post('/apps', payload);
       const repo: string = response.data?.app?.repo ?? selectedRepo.cloneUrl;
 
@@ -178,6 +195,8 @@ export function NewServiceButton() {
       openNodePanel(deploymentId, 'logs');
       setIsOpen(false);
       setServiceName('');
+      setDockerfilePath('');
+      setContainerPort('');
       setSelectedRepo(null);
     } catch (submitError) {
       const apiError = (submitError as { response?: { data?: { details?: string; error?: string } } })?.response?.data;
@@ -284,6 +303,43 @@ export function NewServiceButton() {
                   </p>
                 )}
               </div>
+
+              {/* Monorepo build settings (optional) */}
+              <details className="group rounded-xl border border-brand-700 bg-brand-850/40 px-3 py-2.5">
+                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
+                  Monorepo? Choose a Dockerfile
+                </summary>
+                <div className="mt-3 flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="dockerfilePath" className="text-[11px] text-zinc-400">
+                      Dockerfile path, relative to the repository root
+                    </label>
+                    <input
+                      id="dockerfilePath"
+                      value={dockerfilePath}
+                      onChange={(event) => setDockerfilePath(event.target.value)}
+                      placeholder="services/auth-tenant/Dockerfile"
+                      spellCheck={false}
+                      disabled={isSubmitting}
+                      className="gf-input font-mono text-xs normal-case tracking-normal"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="containerPort" className="text-[11px] text-zinc-400">
+                      Container port (optional — defaults to the Dockerfile&apos;s EXPOSE, else 8080)
+                    </label>
+                    <input
+                      id="containerPort"
+                      inputMode="numeric"
+                      value={containerPort}
+                      onChange={(event) => setContainerPort(event.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="3001"
+                      disabled={isSubmitting}
+                      className="gf-input text-xs font-normal normal-case tracking-normal"
+                    />
+                  </div>
+                </div>
+              </details>
 
               {/* Footer Controls Component */}
               <div className="flex items-center justify-end gap-3 pt-3">

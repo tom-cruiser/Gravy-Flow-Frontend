@@ -83,6 +83,14 @@ export function useClusterOverviewQuery() {
   });
 }
 
+export function useSystemHealthQuery() {
+  return useQuery({
+    queryKey: ['admin', 'system-health'],
+    queryFn: adminApi.getSystemHealth,
+    refetchInterval: 10_000,
+  });
+}
+
 export function useDeploymentsQuery(search: string, page: number, perPage = 25) {
   return useQuery({
     queryKey: ['admin', 'deployments', search, page, perPage],
