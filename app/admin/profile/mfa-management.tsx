@@ -45,7 +45,7 @@ export function MFAManagement() {
       patchUser({ mfaEnabled: false });
       setDisableOpen(false);
       setDisablePassword('');
-      toast.success('MFA has been disabled on this account.', 'MFA disabled');
+      toast.success('MFA has been disabled. Admin access requires it, so set up a new authenticator to continue.', 'MFA disabled');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setDisableError(

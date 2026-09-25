@@ -8,6 +8,7 @@
 // anything embedding it (AdminDeploymentSummary) serialize with Go's default
 // capitalized field names. That's intentional upstream, not a typo here.
 import { api } from './api';
+import type { AuthResponse } from '@/store/authStore';
 
 // ---------------------------------------------------------------------------
 // Module A: User & Team Administration
@@ -327,8 +328,10 @@ export function mfaEnroll() {
   return api.post<{ secret: string; provisioningUri: string }>('/auth/mfa/enroll').then((r) => r.data);
 }
 
+// Returns a fresh MFA-verified session: the backend revokes every older
+// session on enable, so the caller must swap to these tokens.
 export function mfaEnable(code: string) {
-  return api.post<{ message: string }>('/auth/mfa/enable', { code }).then((r) => r.data);
+  return api.post<AuthResponse>('/auth/mfa/enable', { code }).then((r) => r.data);
 }
 
 // ---------------------------------------------------------------------------

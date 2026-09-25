@@ -17,10 +17,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const mfaEnabled = useAuthStore((s) => s.user?.mfaEnabled);
   const [collapsed, setCollapsed] = useState(false);
 
-  // MFA is opt-in (AdminMiddleware only requires isAdmin, not mfaEnabled —
-  // see auth.go), so there's no server-forced redirect into /admin/mfa-setup
-  // here. It's reachable only via the "Security" nav item below, and the
-  // login page's OTP step only appears for accounts that already enrolled.
+  // MFA is required for admin access (AdminMiddleware in auth.go); AdminRoute
+  // holds un-enrolled admins at /admin/mfa-setup until they enroll.
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 10_000 } } }));
 
   return (

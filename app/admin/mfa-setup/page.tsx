@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { mfaEnable, mfaEnroll } from '@/lib/adminApi';
 import { useAuthStore } from '@/store/authStore';
 
-// MFA is opt-in (AdminMiddleware only requires isAdmin, not mfaEnabled — see
-// auth.go), so this page is reachable only voluntarily, via the "Security"
-// link in the admin sidebar — nothing forces an admin here.
+// MFA is required for admin access (AdminMiddleware in auth.go), so AdminRoute
+// sends every un-enrolled admin here before any other admin page loads.
 export default function AdminMfaSetupPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const patchUser = useAuthStore((s) => s.patchUser);
+  const setSession = useAuthStore((s) => s.setSession);
 
   const [secret, setSecret] = useState<string | null>(null);
   const [provisioningUri, setProvisioningUri] = useState<string | null>(null);
@@ -22,8 +21,15 @@ export default function AdminMfaSetupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Each enroll call rotates the pending secret server-side. React StrictMode
+  // runs this effect twice in dev, and two calls let the QR shown come from
+  // a secret the second call already replaced — every code then fails. The
+  // ref survives StrictMode's simulated remount, so enroll runs once.
+  const enrollStarted = useRef(false);
+
   useEffect(() => {
-    if (user?.mfaEnabled) return;
+    if (user?.mfaEnabled || enrollStarted.current) return;
+    enrollStarted.current = true;
     mfaEnroll()
       .then((data) => {
         setSecret(data.secret);
@@ -44,9 +50,10 @@ export default function AdminMfaSetupPage() {
     }
     setLoading(true);
     try {
-      await mfaEnable(code);
-      patchUser({ mfaEnabled: true });
-      router.push('/admin');
+      // Enabling revokes every older session and returns an MFA-verified one.
+      const session = await mfaEnable(code);
+      setSession({ accessToken: session.accessToken, refreshToken: session.refreshToken, user: session.user });
+      router.push('/admin/profile');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(axiosErr?.response?.data?.error === 'invalid_mfa_code' ? 'Incorrect code — try again.' : 'Failed to enable MFA.');

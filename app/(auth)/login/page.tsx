@@ -78,7 +78,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (!mfaToken || !mfaCode) {
-      setError('Enter the 6-digit code from your authenticator app');
+      setError('Enter the 6-digit code from your authenticator app, or a recovery code');
       return;
     }
 
@@ -100,7 +100,9 @@ export default function LoginPage() {
       <AuthShell>
         <div className="mb-8 space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-white">Two-factor verification</h1>
-          <p className="text-sm text-zinc-400">Enter the 6-digit code from your authenticator app.</p>
+          <p className="text-sm text-zinc-400">
+            Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+          </p>
         </div>
 
         {error ? (
@@ -114,10 +116,10 @@ export default function LoginPage() {
           <input
             id="mfaCode"
             type="text"
-            inputMode="numeric"
             autoComplete="one-time-code"
             value={mfaCode}
-            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            // 6-digit TOTP code or a recovery code like A1B2C-D3E4F.
+            onChange={(e) => setMfaCode(e.target.value.toUpperCase().replace(/[^0-9A-F-]/g, '').slice(0, 11))}
             className="gf-input text-center text-lg tracking-[0.5em]"
             placeholder="000000"
             autoFocus

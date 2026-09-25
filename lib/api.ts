@@ -32,10 +32,18 @@ type RetriableRequest = InternalAxiosRequestConfig & {
 
 let refreshPromise: Promise<string | null> | null = null;
 
+// The /auth endpoints that run before a session exists. They must not carry
+// a (possibly stale) bearer token or trigger a refresh. Every other /auth
+// route — mfa/enroll, mfa/enable, api-keys, logout — requires the session.
+const PUBLIC_AUTH_ENDPOINTS = new Set(['/auth/login', '/auth/register', '/auth/refresh', '/auth/mfa/verify']);
+
+function isPublicAuthEndpoint(url: string | undefined): boolean {
+  return url !== undefined && PUBLIC_AUTH_ENDPOINTS.has(url.split('?')[0]);
+}
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
-  const isAuthEndpoint = config.url?.startsWith('/auth/');
-  if (token && !isAuthEndpoint) {
+  if (token && !isPublicAuthEndpoint(config.url)) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -48,8 +56,24 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RetriableRequest | undefined;
 
-    // Never try to refresh for auth endpoints themselves
-    const isAuthEndpoint = originalRequest?.url?.startsWith('/auth/');
+    // Never try to refresh for the pre-session auth endpoints themselves
+    const isAuthEndpoint = isPublicAuthEndpoint(originalRequest?.url);
+
+    // AdminMiddleware refuses admin sessions that didn't pass MFA. Not
+    // enrolled → go enroll; enrolled but this session predates the factor
+    // (e.g. signed in before MFA was enforced) → sign in again with the code.
+    const errorBody = error.response?.data as { error?: string; mfaEnrolled?: boolean } | undefined;
+    if (error.response?.status === 403 && errorBody?.error === 'mfa_required' && typeof window !== 'undefined') {
+      if (errorBody.mfaEnrolled) {
+        toast.error('Sign in again with your authenticator code to use the admin panel.', 'Verification required');
+        useAuthStore.getState().clearSession();
+        window.location.assign('/login');
+      } else {
+        useAuthStore.getState().patchUser({ mfaEnabled: false });
+        if (window.location.pathname !== '/admin/mfa-setup') window.location.assign('/admin/mfa-setup');
+      }
+      return Promise.reject(error);
+    }
 
     if (!originalRequest || error.response?.status !== 401 || originalRequest._retry || isAuthEndpoint) {
       return Promise.reject(error);
