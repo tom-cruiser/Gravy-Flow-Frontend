@@ -125,6 +125,20 @@ export function useForceStopDeploymentMutation() {
   });
 }
 
+export function useUpdateDeploymentResourcesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ deploymentId, ...body }: { deploymentId: string; memoryMB: number; cpu: number; applyNow: boolean }) =>
+      adminApi.updateDeploymentResources(deploymentId, body),
+    onSuccess: (res) => {
+      toast.success(`${res.effectiveMemoryMB} MB · ${res.effectiveCpu} CPU — ${res.message}`, 'Resources updated');
+      if (res.quotaWarning) toast.warning(`These limits ${res.quotaWarning}.`, 'Owner quota');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'deployments'] });
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Failed to update resources'), 'Error'),
+  });
+}
+
 export function usePurgeDeploymentCacheMutation() {
   return useMutation({
     mutationFn: (deploymentId: string) => adminApi.purgeDeploymentCache(deploymentId),

@@ -87,6 +87,22 @@ export type DeploymentRecord = {
 export type AdminDeploymentSummary = DeploymentRecord & {
   ownerUserId: string;
   ownerEmail: string;
+  // Container limits as configured (0 = platform default) and as applied.
+  memoryMB: number;
+  cpu: number;
+  effectiveMemoryMB: number;
+  effectiveCpu: number;
+};
+
+export type UpdateDeploymentResourcesResponse = {
+  message: string;
+  memoryMB: number;
+  cpu: number;
+  effectiveMemoryMB: number;
+  effectiveCpu: number;
+  jobId: string;
+  // Non-empty when the new limits exceed the owner's quota.
+  quotaWarning: string;
 };
 
 export type PaginatedAdminDeployments = {
@@ -168,6 +184,15 @@ export function restartDeployment(deploymentId: string) {
 
 export function forceStopDeployment(deploymentId: string, reason?: string) {
   return api.post(`/admin/deployments/${deploymentId}/force-stop`, { reason }).then((r) => r.data);
+}
+
+export function updateDeploymentResources(
+  deploymentId: string,
+  body: { memoryMB: number; cpu: number; applyNow: boolean },
+) {
+  return api
+    .patch<UpdateDeploymentResourcesResponse>(`/admin/deployments/${deploymentId}/resources`, body)
+    .then((r) => r.data);
 }
 
 export function purgeDeploymentCache(deploymentId: string) {

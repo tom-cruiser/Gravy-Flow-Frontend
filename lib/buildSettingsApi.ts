@@ -8,6 +8,10 @@ export type BuildSettings = {
   dockerfilePath: string;
   // Port the app listens on. 0 = read the Dockerfile's EXPOSE, else 8080.
   containerPort: number;
+  // Container memory limit in MB. 0 = the platform default (512).
+  memoryMB: number;
+  // Container CPU limit in cores. 0 = the platform default (0.5).
+  cpu: number;
 };
 
 export function getBuildSettings(deploymentId: string) {
