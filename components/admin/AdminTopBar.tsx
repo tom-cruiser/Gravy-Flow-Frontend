@@ -16,7 +16,7 @@ import { activeAdminNavItem } from '@/lib/adminNav';
 export function AdminTopBar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
-  const riskAlerts = useRiskAlertsQuery('open');
+  const riskAlerts = useRiskAlertsQuery('open', { enabled: Boolean(user?.isAdmin && user?.mfaEnabled) });
 
   const activeItem = activeAdminNavItem(pathname);
   const openAlertCount = riskAlerts.data?.alerts.length ?? 0;

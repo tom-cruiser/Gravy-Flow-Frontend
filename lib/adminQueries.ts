@@ -240,11 +240,14 @@ export function useRevokeCreditMutation() {
   });
 }
 
-export function useRiskAlertsQuery(status?: string) {
+// `enabled` lets callers that render before MFA enrollment (AdminTopBar shows
+// on /admin/mfa-setup too) hold off: the endpoint 403s until MFA is on.
+export function useRiskAlertsQuery(status?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin', 'risk-alerts', status ?? 'all'],
     queryFn: () => adminApi.listRiskAlerts(status),
     refetchInterval: 30_000,
+    enabled: options?.enabled ?? true,
   });
 }
 
