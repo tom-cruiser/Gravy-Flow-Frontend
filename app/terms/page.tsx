@@ -24,7 +24,7 @@ export default function TermsPage() {
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-white">3. Limitation of Liability</h2>
-            <p>GravyFlow is provided on an "as-is" basis. We are not liable for any data loss, service interruptions, or business damages resulting from your use of our infrastructure.</p>
+            <p>GravyFlow is provided on an &ldquo;as-is&rdquo; basis. We are not liable for any data loss, service interruptions, or business damages resulting from your use of our infrastructure.</p>
           </section>
 
           <section className="mb-8">

@@ -106,9 +106,9 @@ export function RepoAccess({ deploymentId, repo }: RepoAccessProps) {
           {configured === null ? (
             <span className="text-zinc-500">Checking…</span>
           ) : configured ? (
-            <span className="text-emerald-300">An access token is set; it's used for every clone of this repository.</span>
+            <span className="text-emerald-300">An access token is set; it&apos;s used for every clone of this repository.</span>
           ) : (
-            <span className="text-zinc-400">No access token. Public repositories don't need one.</span>
+            <span className="text-zinc-400">No access token. Public repositories don&apos;t need one.</span>
           )}
         </div>
       )}

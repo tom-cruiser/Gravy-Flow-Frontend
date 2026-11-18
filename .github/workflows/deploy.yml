@@ -1,8 +1,8 @@
 name: Deploy
 
-# Every push to main is built and tested, then redeploys the server. The
-# deploy key is restricted on the server to ~/Hosting/GravyFlow/deploy.sh,
-# which pulls main and rebuilds.
+# Every push to main is linted, type-checked, tested and built, then
+# redeploys the server. The deploy key is restricted on the server to
+# ~/Hosting/GravyFlow/deploy.sh, which pulls main and rebuilds.
 on:
   push:
     branches: [main]
@@ -23,6 +23,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
       # Same value the Docker build bakes in (see docker-compose.yml).
       - run: npm run build
         env:
